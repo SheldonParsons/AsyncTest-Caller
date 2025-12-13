@@ -37,8 +37,6 @@ common-api/build/
 /common-api/out/
 /idea-plugin/out/
 
-src/main/resources/META-INF/services/com.itangcent.common.spi.SetupAble
-
 /src
 
 *.iml

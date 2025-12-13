@@ -4,25 +4,27 @@ plugins {
     alias(libs.plugins.intellij) apply false
 }
 
-// 2. 定义项目的全局身份
 group = "com.sheldon"
-version = "1.0.0-212.0"
+version = libs.versions.plugin.version.get()
 
-// 3. 全局兜底策略
 allprojects {
-    tasks.withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
+    // 统一配置 Maven 仓库
+    repositories {
+        mavenCentral()
     }
 
+    // 强制 Java 编译版本为 17
+    plugins.withType<JavaPlugin> {
+        extensions.configure<JavaPluginExtension> {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
+    }
+
+    // 强制 Kotlin 编译版本为 17
     tasks.withType<KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
-    }
-
-    repositories {
-        mavenCentral()
-        maven("https://oss.sonatype.org/content/repositories/snapshots/")
     }
 }

@@ -1,0 +1,27 @@
+<idea-plugin>
+    <id>com.sheldon.idea.plugin.asynctest-caller</id>
+    <name>AsyncTest Caller</name>
+    <version>1.0.0.212.0</version>
+    <vendor email="leesheldonparsons@gmail.com" url="https://github.com/SheldonParsons">Sheldon</vendor>
+
+    <description>Observe web request and calling asynctest platform for marking.</description>
+
+    <category>Web</category>
+
+    <idea-version since-build="212.0"/>
+
+    <change-notes>empty</change-notes>
+
+    <depends optional="true" config-file="ast-caller-java.xml">com.intellij.modules.java</depends>
+    <depends optional="true">org.jetbrains.idea.maven</depends>
+    <depends optional="true">com.intellij.gradle</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="AsyncTest"
+                    secondary="true"
+                    icon="com.sheldon.idea.plugin.icons.AstCallerIcons.Logo"
+                    anchor="right"
+                    factoryClass="com.sheldon.idea.plugin.api.front.dashboard.ApiDashboardToolWindow"/>
+            <notificationGroup id="AsyncTest Notifications" displayType="BALLOON"/>
+    </extensions>
+</idea-plugin>

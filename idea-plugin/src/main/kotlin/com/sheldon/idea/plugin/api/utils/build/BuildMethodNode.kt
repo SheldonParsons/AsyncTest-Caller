@@ -1,0 +1,36 @@
+package com.sheldon.idea.plugin.api.utils.build
+
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiClass
+import com.sheldon.idea.plugin.api.model.ApiNode
+import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
+import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
+
+class BuildMethodNode(
+    val module: Module,
+    val project: Project,
+) : TreeBuilder() {
+    fun build(
+        classHelper: ClassHelper,
+        psiClass: PsiClass,
+        classPath: String,
+        classNode: ApiNode,
+        callback: (ApiNode) -> Unit
+    ) {
+        val methods = classHelper.getMethods()
+        for (psiMethod in methods) {
+            val containingClass = psiMethod.containingClass ?: continue
+            val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
+            // 核心过滤逻辑
+            if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
+                continue
+            }
+            if (isMappingMethod(psiMethod)) {
+                val methodNode =
+                    makeMethodExcludeParam(methodHelper, psiMethod, psiClass, classPath, classNode, module.name)
+                if (methodNode != null) callback(methodNode)
+            }
+        }
+    }
+}

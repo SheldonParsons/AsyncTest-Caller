@@ -1,66 +1,22 @@
-# Version catalog is a central place for you to declare and version dependencies
-# https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
-# https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
-
 [versions]
 kotlin = "2.1.0"
-kotlinxDatetime = "0.6.2"
-kotlinxSerializationJSON = "1.8.1"
-kotlinxCoroutines = "1.10.2"
 intellijPlugin = "1.17.4"
-# --- 沿用 EasyApi 的核心变量 ---
-itangcentIntellij = "1.8.0"
-pluginVersion = "1.0.0.212.0" # 你的新插件版本
-
-# --- 第三方库版本 (从原项目提取) ---
-gson = "2.8.6"
+plugin-version = "1.0.0-SNAPSHOT"
+# 常用工具库
+gson = "2.10.1"
+commonsLang3 = "3.14.0"
 jackson = "2.12.2"
-sqlite = "3.34.0"
 okhttp = "4.12.0"
-openai = "0.31.0"
-httpcomponents = "4.5.10"
-mockito = "4.1.0"
-mockitoInline = "5.2.0"
-junit = "5.9.2"
-
-
+guice = "5.1.0"
 [libraries]
-kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
-kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
-kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
-
-# --- Itangcent 核心库 (EasyApi 作者封装的工具库) ---
-itangcent-commons = { module = "com.itangcent:commons", version.ref = "itangcentIntellij" }
-itangcent-guice = { module = "com.itangcent:guice-action", version.ref = "itangcentIntellij" }
-itangcent-jvm = { module = "com.itangcent:intellij-jvm", version.ref = "itangcentIntellij" }
-itangcent-idea = { module = "com.itangcent:intellij-idea", version.ref = "itangcentIntellij" }
-itangcent-kotlin = { module = "com.itangcent:intellij-kotlin-support", version.ref = "itangcentIntellij" }
-itangcent-groovy = { module = "com.itangcent:intellij-groovy-support", version.ref = "itangcentIntellij" }
-
-# --- 第三方工具库 ---
+# --- 核心工具 ---
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+commonsLang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commonsLang3" }
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
-openai-java = { module = "com.openai:openai-java", version.ref = "openai" }
-openai-client = { module = "com.openai:openai-java-client-okhttp", version.ref = "openai" }
-
-# --- HTTP 组件 (compileOnly) ---
-httpmime = { module = "org.apache.httpcomponents:httpmime", version.ref = "httpcomponents" }
-httpclient = { module = "org.apache.httpcomponents:httpclient", version.ref = "httpcomponents" }
-
-# --- 依赖注入 ---
-guice = { module = "com.google.inject:guice", version = "4.2.2" }
-
-# --- 测试库 ---
-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
-mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
-
-[bundles]
-kotlinxEcosystem = ["kotlinxDatetime", "kotlinxSerialization", "kotlinxCoroutines"]
 
 [plugins]
-kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 intellij = { id = "org.jetbrains.intellij", version.ref = "intellijPlugin" }
