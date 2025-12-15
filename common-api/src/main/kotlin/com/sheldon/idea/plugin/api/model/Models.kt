@@ -36,7 +36,7 @@ data class ApiRequest(
     var method: String? = null,
     var headers: MutableList<AsyncTestVariableNode> = mutableListOf(),
     var query: MutableList<AsyncTestVariableNode> = mutableListOf(),
-    var bodyType: String? = "none",
+    var bodyType: String? = AsyncTestBodyType.NONE,
     var formData: AsyncTestFormData = AsyncTestFormData(),
     var urlencoded: MutableList<AsyncTestVariableNode> = mutableListOf(),
     var json: MutableList<AsyncTestVariableNode> = mutableListOf(),
@@ -52,9 +52,7 @@ data class ApiMockRequest(
 )
 
 data class DataStructure(
-    var refer: String? = null,
     var alias: String = "",
-    var statement: String = "",
     var data: MutableList<AsyncTestVariableNode> = mutableListOf(),
     var hash: String = ""
 )

@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
  */
 object Notifier {
 
-    // 必须和 plugin.xml 中的 id 保持一致
+    // plugin.xml 中的 id 保持一致
     private const val NOTIFICATION_GROUP_ID = "AsyncTest Notifications"
 
     // 懒加载：当第一次使用时，从 IDEA 注册中心获取通知组
@@ -17,7 +17,7 @@ object Notifier {
         .getNotificationGroup(NOTIFICATION_GROUP_ID)
 
     /**
-     * 发送信息 (绿色或蓝色) 气泡通知
+     * 发送气泡通知
      * @param project 当前项目 (可以为 null)
      * @param title 标题
      * @param content 内容
@@ -37,5 +37,12 @@ object Notifier {
             .notify(project)
     }
 
-    // 你可以添加 notifyWarning 等其他方法
+    /**
+     * 发送警告 (黄色) 气泡通知
+     */
+    fun notifyWarning(project: Project?, title: String, content: String) {
+        NOTIFICATION_GROUP
+            .createNotification(title, content, NotificationType.WARNING)
+            .notify(project)
+    }
 }

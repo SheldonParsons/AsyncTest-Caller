@@ -10,10 +10,12 @@ import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiManager
 import com.sheldon.idea.plugin.api.utils.RouteKey
 import com.sheldon.idea.plugin.api.utils.RouteRegistry
+import com.sheldon.idea.plugin.api.utils.ScanSession
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
+import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterBuildRequest
 
-class MethodNodeBuilder(private val project: Project) : TreeBuilder() {
+class MethodNodeBuilder(private val project: Project, val session: ScanSession) : TreeBuilder() {
 
     fun scan(): RouteRegistry {
         return runReadAction {
@@ -55,11 +57,15 @@ class MethodNodeBuilder(private val project: Project) : TreeBuilder() {
                                 val methodNode = makeMethodNode(
                                     methodHelper,
                                     psiMethod,
-                                    psiClass,
                                     module.name,
-                                    classNode,
-                                    module.name
-                                )
+                                    classNode
+                                ) { methodHelper, request ->
+                                    AfterBuildRequest(request).execute(
+                                        methodHelper.project,
+                                        methodHelper.module,
+                                        saveMock = session.saveMock
+                                    )
+                                }
                                 if (methodNode != null) {
                                     routerRegistry.register(
                                         RouteKey(methodNode.method ?: "", methodNode.path ?: ""),

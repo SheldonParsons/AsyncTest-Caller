@@ -8,17 +8,15 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
 import com.sheldon.idea.plugin.api.model.ApiNode
-import com.sheldon.idea.plugin.api.utils.ProjectCacheService
 
 class BuildRootTree(private val project: Project) : TreeBuilder() {
-    fun build(nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): List<ApiNode> {
+    fun build(nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): MutableMap<String, ApiNode> {
         return runReadAction {
-            val resultRoots = mutableListOf<ApiNode>()
+            val resultRoots = mutableMapOf<String, ApiNode>()
             val modules = ModuleManager.getInstance(project).modules
-            val cacheService = ProjectCacheService.getInstance(project)
             for (module in modules) {
                 // 1. 创建 Module 节点
-                val moduleNode = makeRootNode(module, cacheService)
+                val moduleNode = makeRootNode(module)
                 val contentEntries = ModuleRootManager.getInstance(module).contentEntries
                     .flatMap { it.sourceFolders.asList() }
                 for (folder in contentEntries) {
@@ -27,12 +25,11 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
                     val rootDir = PsiManager.getInstance(project).findDirectory(folder.file ?: continue)
                         ?: continue
                     val baseDir = findBasePackageDirectory(rootDir) ?: rootDir
-                    nextBuild(baseDir, moduleNode, module.name, module)
+                    nextBuild(baseDir, moduleNode, moduleNode.treePath, module)
                 }
-                resultRoots.add(moduleNode)
+                resultRoots[module.name] = moduleNode
             }
             return@runReadAction resultRoots
         }
-
     }
 }

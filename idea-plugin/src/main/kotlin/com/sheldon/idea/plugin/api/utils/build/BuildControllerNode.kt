@@ -15,16 +15,21 @@ class BuildControllerNode(
 ) : TreeBuilder() {
     fun build(psiClass: PsiClass, pathPrefix: String, routeRegistry: RouteRegistry): ApiNode? {
         val classHelper = ClassHelper(module, project, psiClass)
-        val classPath = "$pathPrefix.${psiClass.name}"
+        val classPath = "$pathPrefix.${psiClass.name}[2]"
         val classNode = makeClassNode(classHelper, psiClass, classPath)
-        BuildMethodNode(module, project).build(classHelper, psiClass, classPath, classNode) { methodNode: ApiNode ->
+        BuildMethodNode(module, project).build(
+            classHelper,
+            psiClass,
+            classNode.treePath,
+            classNode
+        ) { methodNode: ApiNode ->
             val newMethodNode = routeRegistry.getApiNode(
                 module.name,
                 RouteKey(methodNode.method ?: "", methodNode.path ?: ""),
                 psiClass
             )
             if (newMethodNode != null) {
-                newMethodNode.treePath = "$classPath.${newMethodNode.name}"
+                newMethodNode.treePath = "$classPath.${newMethodNode.name}[3]"
                 classNode.addChild(newMethodNode)
             }
         }

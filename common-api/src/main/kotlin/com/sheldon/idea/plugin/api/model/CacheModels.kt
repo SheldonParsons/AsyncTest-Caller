@@ -23,8 +23,6 @@ data class RemoteProject(var id: String = "", var name: String = "")
 // 4. 模块级别设置
 data class ModuleSetting(var moduleInfo: String = "", var bindProject: RemoteProject)
 
-data class ModuleTree(var data: ApiNode)
-
 // request 映射 <Method+Path, ApiRequest>
 data class ModuleRequestMapping(var mapping: MutableMap<String, ApiRequest> = mutableMapOf())
 

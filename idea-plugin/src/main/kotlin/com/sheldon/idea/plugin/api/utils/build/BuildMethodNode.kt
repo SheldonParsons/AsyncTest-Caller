@@ -28,7 +28,7 @@ class BuildMethodNode(
             }
             if (isMappingMethod(psiMethod)) {
                 val methodNode =
-                    makeMethodExcludeParam(methodHelper, psiMethod, psiClass, classPath, classNode, module.name)
+                    makeMethodExcludeParam(methodHelper, psiMethod, classPath, classNode)
                 if (methodNode != null) callback(methodNode)
             }
         }

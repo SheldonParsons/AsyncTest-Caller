@@ -6,9 +6,6 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiJavaFile
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.intellij.openapi.project.Project
-import com.sheldon.idea.plugin.api.utils.ProjectCacheService
-import com.sheldon.idea.plugin.api.utils.RouteKey
-import com.sheldon.idea.plugin.api.utils.RouteRegistry
 
 class BuildDirectoryTree(
     val module: Module,
@@ -30,15 +27,13 @@ class BuildDirectoryTree(
         pathPrefix: String,
         nextBuild: (PsiClass, String) -> ApiNode?
     ) {
-        val cacheService = ProjectCacheService.getInstance(project)
-
         for (subDir in currentDir.subdirectories) {
             val currentPath = "$pathPrefix.${subDir.name}"
-            val dirNode = makeDirNode(module, cacheService, subDir, currentPath)
+            val dirNode = makeDirNode(subDir, currentPath)
             recursiveBuild(
                 currentDir = subDir,
                 parentNode = dirNode,
-                pathPrefix = currentPath,
+                pathPrefix = dirNode.treePath,
                 nextBuild = nextBuild
             )
 

@@ -22,6 +22,7 @@
 hs_err_pid*
 .gradle/
 .idea/
+.kotlin/
 
 /build
 /buildSrc/build

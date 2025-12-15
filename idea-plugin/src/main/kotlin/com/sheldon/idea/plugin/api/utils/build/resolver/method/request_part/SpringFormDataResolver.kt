@@ -1,6 +1,5 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part
 
-import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiUtil
@@ -13,27 +12,20 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.model.AsyncTestFormData
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.CommonUtils
+import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter.SimpleTypeResolver
 
 class SpringFormDataResolver : RequestPartResolver {
 
-    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest, module: Module): ApiRequest {
+    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
         // 获取boundary
         val boundary = CommonUtils.getBoundaryString()
         if (variable.t !== null) {
-            val formDataList = buildTree(variable.t, "root")
+            val formDataList = buildTree(variable.t, variable)
             if (!formDataList.isNullOrEmpty()) {
                 apiRequest.formData = AsyncTestFormData(boundary, formDataList)
-//                ResolverHelper.addOrUpdateElement(
-//                    apiRequest.headers,
-//                    AsyncTestVariableNode(
-//                        type = "string",
-//                        name = SpringClassName.CONTENT_TYPE,
-//                        defaultValue = "${CommonConstant.DEFAULT_FORM_DATA_HEADER_CONTENT_TYPE_PREFIX}${boundary}"
-//                    )
-//                )
                 apiRequest.bodyType = AsyncTestBodyType.FORM_DATA
             }
         }
@@ -42,15 +34,15 @@ class SpringFormDataResolver : RequestPartResolver {
 
 
     fun buildTree(
-        psiType: PsiType, name: String
+        psiType: PsiType, variable: ParamAnalysisResult
     ): MutableList<AsyncTestVariableNode>? {
-        if (isGeneralObject(psiType)) return null
-        val typeStr = mapToAsyncType(psiType)
+        if (TypeUtils.isGeneralObject(psiType)) return null
+        val typeStr = TypeUtils.mapToAsyncType(psiType)
         val formDataList = mutableListOf<AsyncTestVariableNode>()
         if (typeStr == AsyncTestType.FILES) {
             val fileNode = AsyncTestVariableNode(
                 type = typeStr,
-                name = name,
+                name = variable.name,
                 contentType = CommonConstant.DEFAULT_FORM_DATA_FILE_FIELD_CONTENT_TYPE
             )
             formDataList.add(fileNode)
@@ -73,7 +65,7 @@ class SpringFormDataResolver : RequestPartResolver {
                     if (SimpleTypeResolver().isSimpleType(field.type)) {
                         val textNode = AsyncTestVariableNode(
                             type = typeStr,
-                            name = name,
+                            name = field.name,
                             contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
                         )
                         val fieldComment = ResolverHelper.getElementComment(field)
@@ -84,7 +76,7 @@ class SpringFormDataResolver : RequestPartResolver {
                     } else if (ResolverHelper.isMultipartFile(field.type)) {
                         val fileNode = AsyncTestVariableNode(
                             type = typeStr,
-                            name = name,
+                            name = field.name,
                             contentType = CommonConstant.DEFAULT_FORM_DATA_FILE_FIELD_CONTENT_TYPE
                         )
                         val fieldComment = ResolverHelper.getElementComment(field)
@@ -105,14 +97,14 @@ class SpringFormDataResolver : RequestPartResolver {
         ) {
             val textNode = AsyncTestVariableNode(
                 type = typeStr,
-                name = name,
+                name = variable.name,
                 contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
             )
             formDataList.add(textNode)
         } else if (typeStr == AsyncTestType.ARRAY) {
             val textNode = AsyncTestVariableNode(
                 type = typeStr,
-                name = name,
+                name = variable.name,
                 childList = mutableListOf(""),
                 contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
             )

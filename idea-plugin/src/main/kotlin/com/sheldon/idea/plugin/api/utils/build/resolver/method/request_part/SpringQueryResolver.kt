@@ -1,26 +1,24 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part
 
-import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiUtil
-import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.service.SpringClassName
+import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter.SimpleTypeResolver
 
 class SpringQueryResolver : RequestPartResolver {
 
-    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest, module: Module): ApiRequest {
+    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
         if (variable.t !== null) {
-            val paramList = buildTree(variable.t, "root", variable)
+            val paramList = buildTree(variable.t, variable)
             if (!paramList.isNullOrEmpty()) {
-                apiRequest.query = paramList
                 apiRequest.query = ResolverHelper.mergeHeadersOrParams(apiRequest.query, paramList, distinct = false)
                 ResolverHelper.addOrUpdateElement(
                     apiRequest.headers,
@@ -36,10 +34,10 @@ class SpringQueryResolver : RequestPartResolver {
     }
 
     fun buildTree(
-        psiType: PsiType, name: String, variable: ParamAnalysisResult
+        psiType: PsiType, variable: ParamAnalysisResult
     ): MutableList<AsyncTestVariableNode>? {
-        if (isGeneralObject(psiType)) return null
-        val typeStr = mapToAsyncType(psiType)
+        if (TypeUtils.isGeneralObject(psiType)) return null
+        val typeStr = TypeUtils.mapToAsyncType(psiType)
         val paramList = mutableListOf<AsyncTestVariableNode>()
         if (typeStr == AsyncTestType.DS) {
             val resolveResult = PsiUtil.resolveGenericsClassInType(psiType)
@@ -60,7 +58,7 @@ class SpringQueryResolver : RequestPartResolver {
                     if (SimpleTypeResolver().isSimpleType(field.type)) {
                         val textNode = AsyncTestVariableNode(
                             type = typeStr,
-                            name = name,
+                            name = field.name,
                             defaultValue = variable.defaultValue ?: "",
                             required = variable.isRequired
                         )
@@ -72,7 +70,7 @@ class SpringQueryResolver : RequestPartResolver {
                     } else if (ResolverHelper.isMultipartFile(field.type)) {
                         val fileNode = AsyncTestVariableNode(
                             type = typeStr,
-                            name = name,
+                            name = field.name,
                             defaultValue = variable.defaultValue ?: "",
                             required = variable.isRequired
                         )
@@ -94,7 +92,7 @@ class SpringQueryResolver : RequestPartResolver {
         ) {
             val textNode = AsyncTestVariableNode(
                 type = typeStr,
-                name = name,
+                name = variable.name,
                 defaultValue = variable.defaultValue ?: "",
                 required = variable.isRequired
             )
@@ -102,7 +100,7 @@ class SpringQueryResolver : RequestPartResolver {
         } else if (typeStr == AsyncTestType.ARRAY) {
             val textNode = AsyncTestVariableNode(
                 type = typeStr,
-                name = name,
+                name = variable.name,
                 childList = mutableListOf(""),
                 defaultValue = variable.defaultValue ?: "",
                 required = variable.isRequired

@@ -28,26 +28,24 @@ class DispatcherParameterResolver {
 
             when (location) {
                 ParamLocation.QUERY -> {
-                    SpringQueryResolver().push(result, apiRequest, module)
+                    SpringQueryResolver().push(result, apiRequest)
                 }
 
                 ParamLocation.BODY -> {
-                    val bodyRequest = SpringBodyResolver().push(result, apiRequest, module)
-                    if (bodyRequest != null) {
-                        apiRequest.formData = AsyncTestFormData()
-                        hasJsonBody = true
-                    }
+                    SpringBodyResolver(module).push(result, apiRequest)
+                    apiRequest.formData = AsyncTestFormData()
+                    hasJsonBody = true
                 }
 
                 ParamLocation.FORM_DATA -> {
                     if (hasJsonBody) {
                         continue
                     }
-                    SpringFormDataResolver().push(result, apiRequest, module)
+                    SpringFormDataResolver().push(result, apiRequest)
                 }
 
                 ParamLocation.HEADER -> {
-                    SpringHeadersResolver().push(result, apiRequest, module)
+                    SpringHeadersResolver().push(result, apiRequest)
                 }
             }
         }

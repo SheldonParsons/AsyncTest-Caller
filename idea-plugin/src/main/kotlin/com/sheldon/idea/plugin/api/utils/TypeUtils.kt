@@ -1,71 +1,102 @@
 package com.sheldon.idea.plugin.api.utils
 
+import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiArrayType
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiSubstitutor
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
+import com.intellij.psi.util.InheritanceUtil
+import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.TypeConversionUtil
 import com.sheldon.idea.plugin.api.method.AsyncTestType
+import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 
 object TypeUtils {
 
-    fun mapToAsyncTestType(type: PsiType?): String {
-        if (type == null) return AsyncTestType.STRING
+    fun mapToAsyncType(type: PsiType): String {
+        val canonicalText = type.canonicalText
 
-        // 1. 数组类型
-        if (type is PsiArrayType || ResolverHelper.isInheritor(type, "java.util.Collection")) {
+        if (ResolverHelper.isMultipartFile(type)) {
+            return AsyncTestType.FILES
+        }
+
+
+        if (isArrayOrCollection(type)) {
             return AsyncTestType.ARRAY
         }
 
-        // 2. 数字类型
-        if (type == PsiTypes.intType() || type == PsiTypes.longType() || type == PsiTypes.shortType() || ResolverHelper.isInheritor(
-                type,
-                "java.lang.Integer"
-            ) || ResolverHelper.isInheritor(type, "java.lang.Long")
+        if (PsiTypes.intType().isAssignableFrom(type) || PsiTypes.longType()
+                .isAssignableFrom(type) || PsiTypes.shortType().isAssignableFrom(type) || PsiTypes.byteType()
+                .isAssignableFrom(type) || canonicalText == CommonClassNames.JAVA_LANG_INTEGER || canonicalText == CommonClassNames.JAVA_LANG_LONG
         ) {
             return AsyncTestType.INTEGER
         }
 
-        if (type == PsiTypes.floatType() || type == PsiTypes.doubleType() || ResolverHelper.isInheritor(
-                type,
-                "java.lang.Double"
-            ) || ResolverHelper.isInheritor(type, "java.lang.Float") || ResolverHelper.isInheritor(
-                type,
-                "java.math.BigDecimal"
-            )
+        if (PsiTypes.doubleType().isAssignableFrom(type) || PsiTypes.floatType()
+                .isAssignableFrom(type) || canonicalText == SpringClassName.JAVA_MATH_BIG_DECIMAL
         ) {
             return AsyncTestType.NUMBER
         }
 
-        // 3. 布尔类型
-        if (type == PsiTypes.booleanType() || ResolverHelper.isInheritor(type, "java.lang.Boolean")) {
+        if (PsiTypes.booleanType().isAssignableFrom(type) || canonicalText == CommonClassNames.JAVA_LANG_BOOLEAN) {
             return AsyncTestType.BOOLEAN
         }
 
-        // 4. 文件类型 (Body 用)
-        if (ResolverHelper.isInheritor(
-                type,
-                "org.springframework.web.multipart.MultipartFile"
-            ) || ResolverHelper.isInheritor(type, "javax.servlet.http.Part") || ResolverHelper.isInheritor(
-                type,
-                "jakarta.servlet.http.Part"
-            )
-        ) {
-            return AsyncTestType.FILES
+        if (PsiTypes.voidType().isAssignableFrom(type)) {
+            return AsyncTestType.NULL
         }
 
-        // 默认为 string (包括 String, Date, Enum, UUID 等)
-        return AsyncTestType.STRING
+        if (canonicalText == CommonClassNames.JAVA_LANG_STRING || InheritanceUtil.isInheritor(
+                type, CommonClassNames.JAVA_UTIL_DATE
+            ) || InheritanceUtil.isInheritor(type, SpringClassName.JAVA_TIME_TEMPORAL) || // LocalDate 等
+            PsiUtil.resolveClassInType(type)?.isEnum == true
+        ) {
+            return AsyncTestType.STRING
+        }
+
+        if (isMapType(type)) {
+            return AsyncTestType.OBJECT
+        }
+
+        return AsyncTestType.DS
     }
 
-    // 兼容泛型的获取真实类型
+    fun isArrayOrCollection(type: PsiType): Boolean {
+
+        if (type is PsiArrayType) {
+            return true
+        }
+
+        if (type.canonicalText.startsWith(CommonClassNames.JAVA_UTIL_COLLECTION)) {
+            return true
+        }
+
+
+        return InheritanceUtil.isInheritor(type, CommonClassNames.JAVA_UTIL_COLLECTION)
+    }
+
+    fun isMapType(type: PsiType): Boolean {
+
+        if (type.canonicalText.startsWith(CommonClassNames.JAVA_UTIL_MAP)) {
+
+            return true
+        }
+
+        return InheritanceUtil.isInheritor(type, CommonClassNames.JAVA_UTIL_MAP)
+    }
+
+    /**
+     * 判断是否为 Map 或纯 Object (这些不需要解析字段)
+     */
+    fun isGeneralObject(type: PsiType): Boolean {
+        return type.canonicalText == SpringClassName.JAVA_BASE_OBJECT
+    }
+
     fun getRealTypeForMethod(method: PsiMethod, type: PsiType, currentClass: PsiClass): PsiType {
         val containingClass = method.containingClass
-
-        // 2. 如果方法是在父类定义的，且当前类不是定义类，就需要进行泛型推断
         val realType = if (containingClass != null && containingClass != currentClass) {
             val substitutor = TypeConversionUtil.getSuperClassSubstitutor(
                 containingClass, currentClass, PsiSubstitutor.EMPTY

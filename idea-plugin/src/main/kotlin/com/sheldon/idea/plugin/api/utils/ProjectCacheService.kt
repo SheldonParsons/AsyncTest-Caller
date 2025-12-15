@@ -4,7 +4,6 @@ import com.google.gson.GsonBuilder
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializerUtil
-import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 import com.sheldon.idea.plugin.api.model.*
 
 /**
@@ -20,7 +19,7 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
 
     private var state = CacheState()
 
-    private val gson = GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create()
+    val gson = GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create()
 
     private val CURRENT_VERSION = 1
 
@@ -47,6 +46,13 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
             e.printStackTrace() // 记录错误日志
             defaultProvider() // 解析失败也返回默认值
         }
+    }
+
+    inline fun <reified T> safeFromJson(json: String): T? {
+        if (json.isBlank() || json == "{}") {
+            return null
+        }
+        return gson.fromJson(json, T::class.java)
     }
 
     fun getGlobalSettings(): GlobalSettings {
@@ -82,22 +88,19 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
         state.moduleSettingMap[moduleName] = gson.toJson(setting)
     }
 
-    fun getModuleTree(moduleName: String): ModuleTree? {
+    fun getModuleTree(moduleName: String): ApiNode? {
         val json = state.moduleTreeMap[moduleName] ?: return null
         return safeFromJson(json) { null }
     }
 
-    fun saveModuleTree(moduleName: String, tree: ModuleTree) {
+    fun getTreeMap(): MutableMap<String, String> {
+        return state.moduleTreeMap
+    }
+
+    fun saveModuleTree(moduleName: String, tree: ApiNode) {
         state.moduleTreeMap[moduleName] = gson.toJson(tree)
     }
 
-    fun cleanModuleTree(moduleName: String) {
-        state.moduleTreeMap.remove(moduleName)
-    }
-
-    fun cleanModuleTree() {
-        state.moduleTreeMap.clear()
-    }
 
     fun getModuleDirAlias(moduleName: String): DirAliasMapping? {
         val aliasMapping = state.moduleDirAliasMap[moduleName] ?: return null
@@ -114,17 +117,6 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
         state.moduleDirAliasMap[moduleName] = gson.toJson(mappingObj)
     }
 
-    fun cleanModuleDirAlias(moduleName: String, dirName: String) {
-        val mappingObj = getModuleDirAlias(moduleName) ?: return
-        mappingObj.mapping.remove(dirName)
-    }
-
-    fun cleanModuleDirAlias(moduleName: String) {
-        val mappingObj = getModuleDirAlias(moduleName) ?: return
-        mappingObj.mapping.clear()
-    }
-
-
     fun getModuleRequests(moduleName: String): ModuleRequestMapping? {
         val json = state.moduleRequestMap[moduleName] ?: return null
         return safeFromJson(json) { null }
@@ -134,17 +126,10 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
         state.moduleRequestMap[moduleName] = gson.toJson(mapping)
     }
 
-    fun cleanModuleRequests(moduleName: String) {
-        state.moduleRequestMap.remove(moduleName)
-    }
-
-    fun cleanModuleRequests() {
-        state.moduleRequestMap.clear()
-    }
 
     fun getRequest(moduleName: String, key: String): ApiRequest? {
         val requestMapping = getModuleRequests(moduleName) ?: return null
-        return requestMapping.mapping[key]
+        return requestMapping.mapping.get(key)
     }
 
     private fun getRequestKey(request: ApiRequest): String? {
@@ -160,6 +145,27 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
         return key
     }
 
+    fun getModuleRequestMocks(moduleName: String): ModuleRequestMockMapping? {
+        val json = state.moduleRequestMockMap[moduleName] ?: return null
+        return safeFromJson(json) { null }
+    }
+
+    fun saveModuleRequestMocks(moduleName: String, mapping: ModuleRequestMockMapping) {
+        state.moduleRequestMockMap[moduleName] = gson.toJson(mapping)
+    }
+
+    fun getRequestMock(moduleName: String, key: String): ApiMockRequest? {
+        val requestMockMapping = getModuleRequestMocks(moduleName) ?: return null
+        return requestMockMapping.mapping.get(key)
+    }
+
+    fun saveOrUpdateSingleRequestMock(moduleName: String, key: String, mock: ApiMockRequest): String {
+        val mappingObj = getModuleRequestMocks(moduleName) ?: ModuleRequestMockMapping()
+        mappingObj.mapping[key] = mock
+        saveModuleRequestMocks(moduleName, mappingObj)
+        return key
+    }
+
     fun getDataStructureMapping(moduleName: String): DataStructureMapping? {
         val structure = state.moduleDataStructureMap[moduleName] ?: return null
         return safeFromJson(structure) { null }
@@ -167,7 +173,7 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
 
     fun getDataStructure(moduleName: String, key: String): DataStructure? {
         val structureMapping = getDataStructureMapping(moduleName) ?: return null
-        return structureMapping.mapping[key]
+        return structureMapping.mapping.get(key)
     }
 
     fun saveDataStructureMapping(moduleName: String, mapping: DataStructureMapping) {
@@ -181,9 +187,29 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun addReferToDsPool(moduleName: String, refer: String) {
-        state.moduleAllDataStructurePool
-            .getOrPut(moduleName) { mutableSetOf() }
-            .add(refer)
+        state.moduleAllDataStructurePool.getOrPut(moduleName) { mutableSetOf() }.add(refer)
+    }
+
+    fun getReferDsPool(moduleName: String): MutableSet<String> {
+        return state.moduleAllDataStructurePool.getOrPut(moduleName) { mutableSetOf() }
+    }
+
+    fun cleanModuleDirAlias(moduleName: String, dirName: String) {
+        val mappingObj = getModuleDirAlias(moduleName) ?: return
+        mappingObj.mapping.remove(dirName)
+    }
+
+    fun cleanModuleDirAlias(moduleName: String) {
+        val mappingObj = getModuleDirAlias(moduleName) ?: return
+        mappingObj.mapping.clear()
+    }
+
+    fun cleanModuleTree(moduleName: String) {
+        state.moduleTreeMap.remove(moduleName)
+    }
+
+    fun cleanModuleTree() {
+        state.moduleTreeMap.clear()
     }
 
     fun cleanModuleDsPool(moduleName: String) {
@@ -195,8 +221,7 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun addReferToMethodPathPool(moduleName: String, refer: String) {
-        state.moduleAllRequestMethodPathPool.getOrPut(moduleName) { mutableSetOf() }
-            .add(refer)
+        state.moduleAllRequestMethodPathPool.getOrPut(moduleName) { mutableSetOf() }.add(refer)
     }
 
     fun cleanModuleMethodPathPool(moduleName: String) {
@@ -205,6 +230,30 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
 
     fun cleanModuleMethodPathPool() {
         state.moduleAllRequestMethodPathPool.clear()
+    }
+
+    fun cleanModuleRequests(moduleName: String) {
+        state.moduleRequestMap.remove(moduleName)
+    }
+
+    fun cleanModuleRequests() {
+        state.moduleRequestMap.clear()
+    }
+
+    fun cleanModuleRequestMocks(moduleName: String) {
+        state.moduleRequestMockMap.remove(moduleName)
+    }
+
+    fun cleanModuleRequestMocks() {
+        state.moduleRequestMockMap.clear()
+    }
+
+    fun cleanModuleDs(moduleName: String) {
+        state.moduleDataStructureMap.remove(moduleName)
+    }
+
+    fun cleanModuleDs() {
+        state.moduleDataStructureMap.clear()
     }
 
     companion object {

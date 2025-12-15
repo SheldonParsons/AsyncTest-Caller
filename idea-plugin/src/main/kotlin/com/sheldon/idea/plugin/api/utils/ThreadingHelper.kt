@@ -47,14 +47,34 @@ fun ContextExecutor.runBackgroundRead(
  */
 fun <T> ContextExecutor.runBackgroundReadUI(
     backgroundTask: (Project) -> T,
-    uiUpdate: (T, Project) -> Unit
+    uiUpdate: (T, Project) -> Unit,
+    lockKey: String? = null
 ) {
     val application = ApplicationManager.getApplication()
-    val projectRef = project // 捕获 Project 引用
+    val projectRef = project
+    val cacheService = ApplicationManager.getApplication()
+        .getService(GlobalObjectStorageService::class.java)
+
+    if (lockKey != null) {
+        val success = cacheService.acquireLock(lockKey)
+        if (!success) {
+
+            Notifier.notifyWarning(projectRef, "操作频繁", "任务正在进行中，请稍候...")
+            return
+        }
+    }
+
+    fun safeReleaseLock() {
+        if (lockKey != null) {
+            cacheService.releaseLock(lockKey)
+        }
+    }
 
     if (DumbService.isDumb(projectRef)) {
+
+        safeReleaseLock()
         DumbService.getInstance(projectRef).runWhenSmart {
-            runBackgroundReadUI(backgroundTask, uiUpdate)
+            runBackgroundReadUI(backgroundTask, uiUpdate, lockKey)
         }
         return
     }
@@ -64,11 +84,21 @@ fun <T> ContextExecutor.runBackgroundReadUI(
             val result = runReadAction { backgroundTask(projectRef) }
 
             application.invokeLater {
-                uiUpdate(result, projectRef)
+                try {
+                    uiUpdate(result, projectRef)
+                } finally {
+
+                    safeReleaseLock()
+                }
             }
         } catch (e: Exception) {
             application.invokeLater {
-                Notifier.notifyError(projectRef, "Error", "后台任务失败: ${e.message}")
+                try {
+                    Notifier.notifyError(projectRef, "Error", "后台任务失败: ${e.message}")
+                } finally {
+
+                    safeReleaseLock()
+                }
             }
         }
     }

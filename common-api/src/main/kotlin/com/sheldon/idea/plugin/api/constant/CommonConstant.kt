@@ -7,4 +7,7 @@ object CommonConstant {
     const val DEFAULT_FORM_DATA_FILE_FIELD_CONTENT_TYPE = "image/png"
     const val DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE = "text/plain"
     const val DEFAULT_FORM_DATA_HEADER_CONTENT_TYPE_PREFIX = "multipart/form-data; boundary="
+
+
+    const val AST_CALLER_GLOBAL_ACTION = "AST_CALLER_GLOBAL_ACTION"
 }

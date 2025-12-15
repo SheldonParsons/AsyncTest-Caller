@@ -65,35 +65,33 @@ abstract class TreeBuilder {
         return SpringClassName.SPRING_SINGLE_REQUEST_MAPPING_ANNOTATIONS.any { method.hasAnnotation(it) }
     }
 
-    fun makeRootNode(module: Module, cacheService: ProjectCacheService): ApiNode {
-        val alias = cacheService.getSingleDirAlias(module.name, module.name)
+    fun makeRootNode(module: Module): ApiNode {
         return ApiNode(
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.ROOT_DIR.code,
             code_type = CodeType.MODULE.code,
             name = module.name,
-            treePath = module.name,
-            alias = alias?.alias ?: "",
-            desc = alias?.desc ?: "",
+            treePath = "${module.name}[${CodeType.MODULE.code}]",
+            alias = "",
+            desc = "",
         )
     }
 
     fun makeDirNode(
-        module: Module, cacheService: ProjectCacheService, subDir: PsiDirectory, currentPath: String
+        subDir: PsiDirectory, parentPath: String
     ): ApiNode {
-        val alias = cacheService.getSingleDirAlias(module.name, subDir.name)
         return ApiNode(
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.DIR.code,
             name = subDir.name,
-            treePath = currentPath,
-            alias = alias?.alias ?: "",
-            desc = alias?.desc ?: "",
+            treePath = "${parentPath}[${CodeType.DIR.code}]",
+            alias = "",
+            desc = "",
         )
     }
 
-    fun makeClassNode(classHelper: ClassHelper, psiClass: PsiClass, classPath: String): ApiNode {
+    fun makeClassNode(classHelper: ClassHelper, psiClass: PsiClass, parentPath: String): ApiNode {
         val (clsAlias, clsDesc) = classHelper.parseDoc(psiClass)
         val request = SpringClassResolver().resolveRequestMapping(psiClass)
         return ApiNode(
@@ -101,7 +99,7 @@ abstract class TreeBuilder {
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.CLASS.code,
             name = psiClass.name ?: "Unknown",
-            treePath = classPath,
+            treePath = "${parentPath}[${CodeType.CLASS.code}]",
             alias = clsAlias,
             desc = clsDesc,
             classRequest = request
@@ -111,23 +109,21 @@ abstract class TreeBuilder {
     fun makeMethodNode(
         methodHelper: MethodHelper,
         psiMethod: PsiMethod,
-        psiClass: PsiClass,
         prefixPath: String,
         classNode: ApiNode,
-        moduleName: String,
+        callback: (MethodHelper, ApiRequest) -> String
     ): ApiNode? {
         val (mAlias, mDesc) = methodHelper.parseDoc(psiMethod)
         val request: ApiRequest = methodHelper.getMethodNodeCoreInfo(classNode) ?: return null
         request.path = PathUtils.normalizeToAsyncTestPath(request.path)
-        val cacheService = ProjectCacheService.getInstance(project = methodHelper.project)
-        val requestKey = cacheService.saveOrUpdateSingleRequest(moduleName, request)
         val hash = request.calculateSafeHash()
-        return ApiNode(
+        val requestKey = callback(methodHelper, request)
+        val result = ApiNode(
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.INTERFACE_NODE.code,
             code_type = CodeType.METHOD.code,
             name = psiMethod.name,
-            treePath = "$prefixPath.${psiMethod.name}",
+            treePath = "${prefixPath}.${psiMethod.name}[${CodeType.METHOD.code}]",
             alias = mAlias,
             desc = mDesc,
             request = requestKey,
@@ -135,15 +131,15 @@ abstract class TreeBuilder {
             method = request.method,
             hash = hash
         )
+
+        return result
     }
 
     fun makeMethodExcludeParam(
         methodHelper: MethodHelper,
         psiMethod: PsiMethod,
-        psiClass: PsiClass,
         prefixPath: String,
         classNode: ApiNode,
-        moduleName: String,
     ): ApiNode? {
         fun getRequestKey(request: ApiRequest): String? {
             if (request.method == null) return null
@@ -153,8 +149,6 @@ abstract class TreeBuilder {
         val request: ApiRequest = methodHelper.getMethodNodeCoreInfo(classNode, true) ?: return null
         request.path = PathUtils.normalizeToAsyncTestPath(request.path)
         val requestKey = getRequestKey(request) ?: return null
-//        val cacheService = ProjectCacheService.getInstance(project = methodHelper.project)
-//        val requestKey = cacheService.saveOrUpdateSingleRequest(moduleName, request)
         return ApiNode(
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.INTERFACE_NODE.code,
