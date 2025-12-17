@@ -43,7 +43,7 @@ intellij {
     type.set("IC")
     pluginName.set("AsyncTest Caller")
     sandboxDir.set("idea-sandbox")
-    plugins.set(listOf("java", "maven", "gradle", "Groovy"))
+    plugins.set(listOf("java", "maven", "gradle", "properties", "yaml"))
 }
 
 tasks {
@@ -55,9 +55,13 @@ tasks {
     }
 
     runIde {
-        args = listOf("/Users/sheldon/Documents/AsyncTest/other_module/spring-for-plugins-test")
+        args = listOf("/Users/sheldon/Documents/AsyncTest/other_module/spring-boot-demo")
         jvmArgs = listOf("-Didea.is.internal=true", "-Dgradle.version.support.matrix.url=file:///dev/null")
     }
+    instrumentCode {
+        enabled = false
+    }
+    buildSearchableOptions { enabled = false }
 }
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {

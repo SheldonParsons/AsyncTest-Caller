@@ -3,34 +3,6 @@ package com.sheldon.idea.plugin.api.model
 import com.sheldon.idea.plugin.api.method.AsyncTestBodyType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 
-/**
- * 对应你要求的 JSON 结构
- */
-data class ApiNode(
-    var type: Int,
-    var child_type: Int,
-    var code_type: Int,
-    var count: Int = 0,
-    var method: String? = null,
-    var name: String,
-    var alias: String? = null,
-    var desc: String? = null,
-    var treePath: String,
-    var children: MutableList<ApiNode>? = null,
-    var request: String? = null,
-    var mock: Any? = null,
-    var classRequest: ApiRequest? = null,
-    var path: String? = null,
-    var hash: String = ""
-) {
-    fun addChild(node: ApiNode) {
-        if (children == null) {
-            children = mutableListOf()
-        }
-        children?.add(node)
-    }
-}
-
 data class ApiRequest(
     var path: String? = null,
     var method: String? = null,
@@ -48,7 +20,8 @@ data class ApiMockRequest(
     var headers: String? = "",
     var query: String? = "",
     var bodyType: String? = "none",
-    var body: String = ""
+    var body: String = "",
+    var prefix: String = ""
 )
 
 data class DataStructure(

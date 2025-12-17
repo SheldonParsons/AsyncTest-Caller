@@ -27,12 +27,10 @@ class BuildController {
         cacheService.cleanModuleMethodPathPool()
         scanContext(ScanSession(saveMock = saveMock)) { session ->
             val projectTreeMap = SpringWebScanner(project, session).scanAndBuildTree()
-            // TODO:需要将tree等信息放到GlobalObjectStorageService上下文中
             // 存树
             projectTreeMap.map { (moduleName, value) ->
                 cacheService.saveModuleTree(moduleName, value)
             }
-
             return projectTreeMap
         }
     }
@@ -43,11 +41,7 @@ class BuildController {
         if (projectTreeMap.isEmpty()) {
             return reloadProjectForce(project, saveMock)
         } else {
-            val newTreeMap = mutableMapOf<String, ApiNode>()
-            projectTreeMap.map { (moduleName, value) ->
-                ProjectCacheService().safeFromJson<ApiNode>(value)?.let { newTreeMap[moduleName] = it }
-            }
-            return newTreeMap
+            return projectTreeMap
         }
     }
 

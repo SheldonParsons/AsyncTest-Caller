@@ -101,7 +101,7 @@ class SpringQueryResolver : RequestPartResolver {
             val textNode = AsyncTestVariableNode(
                 type = typeStr,
                 name = variable.name,
-                childList = mutableListOf(""),
+                childList = arrayListOf(""),
                 defaultValue = variable.defaultValue ?: "",
                 required = variable.isRequired
             )

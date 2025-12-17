@@ -105,7 +105,7 @@ class SpringFormDataResolver : RequestPartResolver {
             val textNode = AsyncTestVariableNode(
                 type = typeStr,
                 name = variable.name,
-                childList = mutableListOf(""),
+                childList = arrayListOf(""),
                 contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
             )
             formDataList.add(textNode)

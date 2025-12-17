@@ -24,15 +24,13 @@ import com.sheldon.idea.plugin.api.utils.calculateSafeHash
 class SpringBodyResolver(val module: Module) :
     RequestPartResolver {
 
-    private val cacheService = ProjectCacheService.getInstance(project = module.project)
-
     override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
         /**
          * 1、获取持久化缓存信息
          * 2、将创建的dto对象更新进去ProjectCacheService.saveOrUpdateSingleRequest
          * 3、将dto加入到ProjectCacheService.addReferToDsPool
          * */
-        println("类型----------------------：${variable.t}")
+//        println("类型----------------------：${variable.t}")
         // 优先解析的权重更高，如果已经解析过了，直接返回
         if (apiRequest.json.isNotEmpty()) {
             return apiRequest
@@ -51,23 +49,23 @@ class SpringBodyResolver(val module: Module) :
                 // =======================================================
                 val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
 
-                println("\n========== [1] API 请求体结构 (Root) ==========")
-                // 预期：Root 是实心的，但其子 DS 节点 (如 data) 是空心的 (children=[])
-                println(gson.toJson(rootNode))
-
-                println("\n========== [2] ProjectCache 存储的定义 (Definitions) ==========")
-                // 预期：这里包含了所有涉及到的 DS 的完整定义 (Root 自身也会在这里存一份)
-                val allDefs = cacheService.getDataStructureMapping(module.name)?.mapping
-                println("allDefs.size:${allDefs?.size}")
-                allDefs?.forEach { (id, node) ->
-                    println(">>> 定义 ID: $id")
-                    println(">>> alias: ${node.alias}")
-                    println(gson.toJson(node.data))
-                    println("--------------------------------------------------")
-                }
-                println("所有ds:${cacheService.getReferDsPool(module.name)}")
-
-                println("======================================================\n")
+//                println("\n========== [1] API 请求体结构 (Root) ==========")
+//                // 预期：Root 是实心的，但其子 DS 节点 (如 data) 是空心的 (children=[])
+//                println(gson.toJson(rootNode))
+//
+//                println("\n========== [2] ProjectCache 存储的定义 (Definitions) ==========")
+//                // 预期：这里包含了所有涉及到的 DS 的完整定义 (Root 自身也会在这里存一份)
+//                val allDefs = cacheService.getDataStructureMapping(module.name)?.mapping
+//                println("allDefs.size:${allDefs?.size}")
+//                allDefs?.forEach { (id, node) ->
+//                    println(">>> 定义 ID: $id")
+//                    println(">>> alias: ${node.alias}")
+//                    println(gson.toJson(node.data))
+//                    println("--------------------------------------------------")
+//                }
+//                println("所有ds:${cacheService.getReferDsPool(module.name)}")
+//
+//                println("======================================================\n")
                 // =======================================================
                 // 验证打印逻辑 END
                 // =======================================================

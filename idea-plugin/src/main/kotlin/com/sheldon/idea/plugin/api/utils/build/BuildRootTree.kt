@@ -9,6 +9,7 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
 import com.sheldon.idea.plugin.api.model.ApiNode
 
+
 class BuildRootTree(private val project: Project) : TreeBuilder() {
     fun build(nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): MutableMap<String, ApiNode> {
         return runReadAction {
@@ -27,7 +28,11 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
                     val baseDir = findBasePackageDirectory(rootDir) ?: rootDir
                     nextBuild(baseDir, moduleNode, moduleNode.treePath, module)
                 }
-                resultRoots[module.name] = moduleNode
+
+                if (moduleNode.children.isNotEmpty()) {
+                    resultRoots[module.name] = moduleNode
+                    println("${module.name}.size:${moduleNode.children.size}:${moduleNode.children.isNotEmpty()}")
+                }
             }
             return@runReadAction resultRoots
         }

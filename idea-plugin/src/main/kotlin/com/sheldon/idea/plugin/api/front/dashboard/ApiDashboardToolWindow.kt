@@ -7,10 +7,9 @@ import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.jetbrains.rd.util.first
-import com.sheldon.idea.plugin.api.front.dashboard.panel.ApiTreePanel
-import com.sheldon.idea.plugin.api.front.dashboard.utils.ApiTreeHelper
+import com.sheldon.idea.plugin.api.front.dashboard.component.ApiTreePanel
+import com.sheldon.idea.plugin.api.front.dashboard.component.ModuleSelector
 import com.sheldon.idea.plugin.api.front.dashboard.utils.TreeAction
-import javax.swing.JTextArea
 
 class ApiDashboardToolWindow : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -20,6 +19,8 @@ class ApiDashboardToolWindow : ToolWindowFactory {
         toolWindow.contentManager.addContent(content)
         TreeAction.reloadTree(project) { treeMap, _ ->
             val rootNode = treeMap.first().value
+            dashboardPanel.moduleSelector.updateDropdown(treeMap.keys)
+            dashboardPanel.moduleSelector.isEditable = true
             dashboardPanel.treePanel.renderApiTree(rootNode)
         }
     }
@@ -29,23 +30,22 @@ class ApiDashboardToolWindow : ToolWindowFactory {
 
         val treePanel = ApiTreePanel()
 
-        // 创建一个文本区域，用来显示扫描日志
-        private val logArea = JTextArea().apply {
-            isEditable = false
-            text = "准备就绪... 点击上方按钮开始扫描 Spring 接口"
-        }
+        val moduleSelector = ModuleSelector(project, treePanel)
 
         fun getContent() = panel {
             // === 第一行：操作栏 ===
             row {
-                button("重置树结构（全局）") {
+                button("刷新所有服务") {
                     TreeAction.reloadTree(project, force = true) { treeMap, _ ->
-                        println("")
                         val rootNode = treeMap.first().value
                         treePanel.renderApiTree(rootNode)
+                        moduleSelector.updateDropdown(treeMap.keys)
                     }
                 }
+
+                cell(moduleSelector).align(Align.FILL)
             }
+            // 树结构
             row {
                 cell(treePanel).align(Align.FILL)
             }

@@ -1,7 +1,10 @@
 package com.sheldon.idea.plugin.api.method
 
-import com.google.gson.annotations.SerializedName
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.collections.ArrayList
+import com.intellij.util.xmlb.annotations.Attribute
+import com.intellij.util.xmlb.annotations.Tag
+import com.intellij.util.xmlb.annotations.XCollection
 
 /**
  * 参数位置枚举：决定了这个参数最终去 ApiRequest 的哪个列表
@@ -17,53 +20,55 @@ enum class ParamLocation {
 /**
  * AsyncTest 平台专用的 Schema 节点
  */
+@Tag("node") // 对应 XML 中的 <node> 标签
 data class AsyncTestVariableNode(
-    // 类型: "ds" (结构体), "string", "integer", "number", "boolean", "array", "null", "files", "object"
-    @SerializedName("t")
-    val type: String,
+    // ✅ 1. 全部改成 var
+    // ✅ 2. 使用 @Attribute 把它变成 <node t="string"> 这样更紧凑，或者用 @Tag 变成子标签
+    @Attribute("t")
+    var type: String = "",
 
-    // 字段名 (如果是根节点通常是类名，如果是字段则是字段名)
-    @SerializedName("name")
+    @Attribute("name")
     var name: String = "",
 
-    // 随机 7 位数字 ID
-    @SerializedName("id")
-    val id: Int = generateRandomId(),
+    // 建议默认值给 0 或 -1，避免序列化干扰。创建新对象时再赋值。
+    @Attribute("id")
+    var id: Int = 0,
 
-    // 默认值 / 引用 Key
-    // 对于简单类型: 默认值 (如 "0", "")
-    // 对于 "ds": 引用 Key (如 "com.example.UserDto")
-    @SerializedName("default")
+    @Attribute("default")
     var defaultValue: String = "",
 
-    // 描述 (目前留空)
-    @SerializedName("statement")
+    @Attribute("statement")
     var statement: String = "",
 
-    // 是否必填
-    @SerializedName("required")
+    @Attribute("required")
     var required: Boolean = false,
 
-    // content-type
-    @SerializedName("content_type")
+    @Attribute("content_type")
     var contentType: String = "",
 
-    // 子节点 (用于 ds 的字段 或 array 的元素)
-    @SerializedName("children")
-    var children: MutableList<AsyncTestVariableNode> = mutableListOf(),
+    // ✅ 3. 集合字段
+    // 使用 @Tag 和 @XCollection 让 XML 结构更好看
+    @Tag("children")
+    @XCollection(style = XCollection.Style.v2) // v2 风格通常更简洁
+    var children: ArrayList<AsyncTestVariableNode> = ArrayList(),
 
-    @SerializedName("ds_target")
-    var dsTarget: String? = null,
+    @Attribute("ds_target")
+    var dsTarget: String? = "",
 
-    @SerializedName("child_list")
-    val childList: MutableList<String> = mutableListOf(),
+    @Tag("child_list")
+    @XCollection(style = XCollection.Style.v2)
+    var childList: ArrayList<String> = ArrayList(),
 
-    @SerializedName("file_list")
-    var fileList: MutableList<String> = mutableListOf(),
+    @Tag("file_list")
+    @XCollection(style = XCollection.Style.v2)
+    var fileList: ArrayList<String> = ArrayList(),
 ) {
+    // 这是一个辅助构造函数或方法，用于业务中创建带 ID 的新节点
     companion object {
-        fun generateRandomId(): Int {
-            return ThreadLocalRandom.current().nextInt(1000000, 9999999)
+        fun createNew(): AsyncTestVariableNode {
+            return AsyncTestVariableNode().apply {
+                id = ThreadLocalRandom.current().nextInt(1000000, 9999999)
+            }
         }
     }
 }

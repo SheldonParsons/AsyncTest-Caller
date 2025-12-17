@@ -15,7 +15,7 @@ data class PrivateInfo(
 
 // 3. 远端平台缓存信息
 data class AsyncTestInfo(
-    var projectList: MutableList<RemoteProject> = mutableListOf()
+    var projectList: ArrayList<RemoteProject> = ArrayList()
 )
 
 data class RemoteProject(var id: String = "", var name: String = "")
@@ -24,14 +24,14 @@ data class RemoteProject(var id: String = "", var name: String = "")
 data class ModuleSetting(var moduleInfo: String = "", var bindProject: RemoteProject)
 
 // request 映射 <Method+Path, ApiRequest>
-data class ModuleRequestMapping(var mapping: MutableMap<String, ApiRequest> = mutableMapOf())
+data class ModuleRequestMapping(var mapping: java.util.HashMap<String, ApiRequest> = java.util.HashMap())
 
-data class ModuleRequestMockMapping(var mapping: MutableMap<String, ApiMockRequest> = mutableMapOf())
+data class ModuleRequestMockMapping(var mapping: java.util.HashMap<String, ApiMockRequest> = java.util.HashMap())
 
 // 数据模型 映射 <package.className, DataStructure>
-data class DataStructureMapping(var mapping: MutableMap<String, DataStructure> = mutableMapOf())
+data class DataStructureMapping(var mapping: java.util.HashMap<String, DataStructure> = java.util.HashMap())
 
-data class DirAliasMapping(var mapping: MutableMap<String, Alias> = mutableMapOf())
+data class DirAliasMapping(var mapping: java.util.HashMap<String, Alias> = java.util.HashMap())
 
 
 data class Alias(var alias: String, var desc: String)

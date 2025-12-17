@@ -1,10 +1,14 @@
 package com.sheldon.idea.plugin.api.utils
 
-import com.google.gson.GsonBuilder
+import com.intellij.openapi.util.JDOMUtil
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
+import com.intellij.util.xmlb.XmlSerializer
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.sheldon.idea.plugin.api.model.*
+import java.nio.file.Paths
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 
 /**
  * 项目级缓存服务
@@ -13,13 +17,11 @@ import com.sheldon.idea.plugin.api.model.*
 @Service(Service.Level.PROJECT)
 @State(
     name = "AsyncTestCallerCache",
-    storages = [Storage("async_test_caller_cache.xml", roamingType = RoamingType.DISABLED)]
+    storages = [Storage("async_test_force_dump.xml", roamingType = RoamingType.DISABLED)]
 )
-class ProjectCacheService : PersistentStateComponent<CacheState> {
+class ProjectCacheService(val project: Project) : PersistentStateComponent<CacheState> {
 
     private var state = CacheState()
-
-    val gson = GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create()
 
     private val CURRENT_VERSION = 1
 
@@ -36,75 +38,54 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
         return state
     }
 
-    private inline fun <reified T> safeFromJson(json: String, defaultProvider: () -> T): T {
-        if (json.isBlank() || json == "{}") {
-            return defaultProvider()
-        }
-        return try {
-            gson.fromJson(json, T::class.java) ?: defaultProvider()
-        } catch (e: Exception) {
-            e.printStackTrace() // 记录错误日志
-            defaultProvider() // 解析失败也返回默认值
-        }
-    }
-
-    inline fun <reified T> safeFromJson(json: String): T? {
-        if (json.isBlank() || json == "{}") {
-            return null
-        }
-        return gson.fromJson(json, T::class.java)
-    }
-
     fun getGlobalSettings(): GlobalSettings {
-        return safeFromJson(state.globalSettings) { GlobalSettings() }
+        return state.globalSettings
     }
 
     fun saveGlobalSettings(settings: GlobalSettings) {
-        state.globalSettings = gson.toJson(settings)
+        state.globalSettings = settings
     }
 
     fun getPrivateInfo(): PrivateInfo {
-        return safeFromJson(state.privateInfo) { PrivateInfo() }
+        return state.privateInfo
     }
 
     fun savePrivateInfo(info: PrivateInfo) {
-        state.privateInfo = gson.toJson(info)
+        state.privateInfo = info
     }
 
     fun getAsyncTestInfo(): AsyncTestInfo {
-        return safeFromJson(state.asynctestInfo) { AsyncTestInfo() }
+        return state.asynctestInfo
     }
 
     fun saveAsyncTestInfo(info: AsyncTestInfo) {
-        state.asynctestInfo = gson.toJson(info)
+        state.asynctestInfo = info
     }
 
     fun getModuleSetting(moduleName: String): ModuleSetting? {
-        val json = state.moduleSettingMap[moduleName] ?: return null
-        return safeFromJson(json) { null }
+        return state.moduleSettingMap.get(moduleName)
     }
 
     fun saveModuleSetting(moduleName: String, setting: ModuleSetting) {
-        state.moduleSettingMap[moduleName] = gson.toJson(setting)
+        state.moduleSettingMap[moduleName] = setting
     }
 
     fun getModuleTree(moduleName: String): ApiNode? {
-        val json = state.moduleTreeMap[moduleName] ?: return null
-        return safeFromJson(json) { null }
+        return state.moduleTreeMap[moduleName]
     }
 
-    fun getTreeMap(): MutableMap<String, String> {
+    fun getTreeMap(): MutableMap<String, ApiNode> {
         return state.moduleTreeMap
     }
 
     fun saveModuleTree(moduleName: String, tree: ApiNode) {
-        state.moduleTreeMap[moduleName] = gson.toJson(tree)
+        state.moduleTreeMap[moduleName] = tree
+//        forceWriteToDisk()
     }
 
 
     fun getModuleDirAlias(moduleName: String): DirAliasMapping? {
-        val aliasMapping = state.moduleDirAliasMap[moduleName] ?: return null
-        return safeFromJson(aliasMapping) { null }
+        return state.moduleDirAliasMap.get(moduleName)
     }
 
     fun getSingleDirAlias(moduleName: String, dirName: String): Alias? {
@@ -114,16 +95,15 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     fun saveOrUpdateDirAlias(moduleName: String, dirName: String, alias: Alias) {
         val mappingObj = getModuleDirAlias(moduleName) ?: DirAliasMapping()
         mappingObj.mapping[dirName] = alias
-        state.moduleDirAliasMap[moduleName] = gson.toJson(mappingObj)
+        state.moduleDirAliasMap[moduleName] = mappingObj
     }
 
     fun getModuleRequests(moduleName: String): ModuleRequestMapping? {
-        val json = state.moduleRequestMap[moduleName] ?: return null
-        return safeFromJson(json) { null }
+        return state.moduleRequestMap[moduleName]
     }
 
     fun saveModuleRequests(moduleName: String, mapping: ModuleRequestMapping) {
-        state.moduleRequestMap[moduleName] = gson.toJson(mapping)
+        state.moduleRequestMap[moduleName] = mapping
     }
 
 
@@ -146,12 +126,11 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun getModuleRequestMocks(moduleName: String): ModuleRequestMockMapping? {
-        val json = state.moduleRequestMockMap[moduleName] ?: return null
-        return safeFromJson(json) { null }
+        return state.moduleRequestMockMap[moduleName]
     }
 
     fun saveModuleRequestMocks(moduleName: String, mapping: ModuleRequestMockMapping) {
-        state.moduleRequestMockMap[moduleName] = gson.toJson(mapping)
+        state.moduleRequestMockMap[moduleName] = mapping
     }
 
     fun getRequestMock(moduleName: String, key: String): ApiMockRequest? {
@@ -167,8 +146,7 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun getDataStructureMapping(moduleName: String): DataStructureMapping? {
-        val structure = state.moduleDataStructureMap[moduleName] ?: return null
-        return safeFromJson(structure) { null }
+        return state.moduleDataStructureMap[moduleName]
     }
 
     fun getDataStructure(moduleName: String, key: String): DataStructure? {
@@ -177,7 +155,7 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun saveDataStructureMapping(moduleName: String, mapping: DataStructureMapping) {
-        state.moduleDataStructureMap[moduleName] = gson.toJson(mapping)
+        state.moduleDataStructureMap[moduleName] = mapping
     }
 
     fun saveOrUpdateSingleDataStructure(moduleName: String, key: String, body: DataStructure) {
@@ -187,11 +165,11 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun addReferToDsPool(moduleName: String, refer: String) {
-        state.moduleAllDataStructurePool.getOrPut(moduleName) { mutableSetOf() }.add(refer)
+        state.moduleAllDataStructurePool.getOrPut(moduleName) { HashSet() }.add(refer)
     }
 
     fun getReferDsPool(moduleName: String): MutableSet<String> {
-        return state.moduleAllDataStructurePool.getOrPut(moduleName) { mutableSetOf() }
+        return state.moduleAllDataStructurePool.getOrPut(moduleName) { HashSet() }
     }
 
     fun cleanModuleDirAlias(moduleName: String, dirName: String) {
@@ -221,7 +199,7 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
     }
 
     fun addReferToMethodPathPool(moduleName: String, refer: String) {
-        state.moduleAllRequestMethodPathPool.getOrPut(moduleName) { mutableSetOf() }.add(refer)
+        state.moduleAllRequestMethodPathPool.getOrPut(moduleName) { HashSet() }.add(refer)
     }
 
     fun cleanModuleMethodPathPool(moduleName: String) {
@@ -254,6 +232,47 @@ class ProjectCacheService : PersistentStateComponent<CacheState> {
 
     fun cleanModuleDs() {
         state.moduleDataStructureMap.clear()
+    }
+
+    private fun forceWriteToDisk() {
+        try {
+            // 1. 获取准确的 .idea 路径
+            // project.projectFile 指向 .idea/misc.xml 或 project.ipr
+            // 我们取它的父目录，通常就是 .idea 文件夹
+            val dotIdea = project.projectFile?.parent?.path
+
+            if (dotIdea == null) {
+                println(">>> ❌ [核弹写入] 无法获取 .idea 路径！")
+                return
+            }
+
+            // 2. 构造目标文件路径
+            // 注意：这里手动指定文件名，绕过 Storage 注解
+            val targetPath = Paths.get(dotIdea, "async_test_force_dump.xml")
+
+            // 3. 序列化 (利用你现有的注解配置)
+            // 这一步会把 myState 变成 XML Element
+            val element = XmlSerializer.serialize(state)
+
+            if (element == null) {
+                println(">>> ❌ [核弹写入] 序列化结果为 null")
+                return
+            }
+
+            // 4. 确保目录存在
+            if (!targetPath.parent.exists()) {
+                targetPath.parent.createDirectories()
+            }
+
+            // 5. 写入文件
+            JDOMUtil.write(element, targetPath, "\n")
+
+            println(">>> 🚀 [核弹写入成功] 文件已生成于: $targetPath")
+
+        } catch (e: Exception) {
+            println(">>> ❌ [核弹写入炸了]")
+            e.printStackTrace()
+        }
     }
 
     companion object {

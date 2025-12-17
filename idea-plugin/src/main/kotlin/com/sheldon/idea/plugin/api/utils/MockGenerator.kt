@@ -14,7 +14,7 @@ class MockGenerator(val module: Module) {
     private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
 
     fun generate(
-        request: ApiRequest, dsResolver: (String) -> AsyncTestVariableNode? = { key ->
+        request: ApiRequest, prefix: String, dsResolver: (String) -> AsyncTestVariableNode? = { key ->
             val cacheService = ProjectCacheService.getInstance(project = module.project)
             cacheService.getDataStructure(module.name, key)?.data?.firstOrNull()
         }
@@ -25,7 +25,8 @@ class MockGenerator(val module: Module) {
             headers = buildHeaders(request.headers),
             query = buildQueryJson(request.query),
             bodyType = request.bodyType,
-            body = buildBody(request, dsResolver)
+            body = buildBody(request, dsResolver),
+            prefix = prefix
         )
     }
 

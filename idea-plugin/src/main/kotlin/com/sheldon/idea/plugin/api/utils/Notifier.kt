@@ -13,8 +13,10 @@ object Notifier {
     private const val NOTIFICATION_GROUP_ID = "AsyncTest Notifications"
 
     // 懒加载：当第一次使用时，从 IDEA 注册中心获取通知组
-    private val NOTIFICATION_GROUP = NotificationGroupManager.getInstance()
-        .getNotificationGroup(NOTIFICATION_GROUP_ID)
+    private val NOTIFICATION_GROUP by lazy {
+        NotificationGroupManager.getInstance()
+            .getNotificationGroup(NOTIFICATION_GROUP_ID)
+    }
 
     /**
      * 发送气泡通知

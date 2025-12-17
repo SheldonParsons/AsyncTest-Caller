@@ -1,4 +1,4 @@
-package com.sheldon.idea.plugin.api.front.dashboard.component
+package com.sheldon.idea.plugin.api.front.dashboard.renderer
 
 import com.intellij.icons.AllIcons
 import com.intellij.ui.ColoredTreeCellRenderer
@@ -35,31 +35,28 @@ class ApiTreeCellRenderer : ColoredTreeCellRenderer() {
         // 3. 拼接文本 (关键！)
 
         // A. 如果有 HTTP 方法，先显示方法名 (加粗 + 颜色)
-        if (!apiNode.method.isNullOrEmpty()) {
+        if (apiNode.code_type == 3) {
             val methodAttr = SimpleTextAttributes(
                 SimpleTextAttributes.STYLE_BOLD,
                 getMethodColor(apiNode.method) // 自定义颜色函数
             )
             append("[${apiNode.method}] ", methodAttr)
         }
+        // B. 显示名称
 
-        // B. 显示名称 (常规)
         append(apiNode.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)
-
-        // C. 显示别名/描述 (灰色 + 小字)
-        // alias 优先，desc 次之
-        val comment = apiNode.alias ?: apiNode.desc
-        if (!comment.isNullOrEmpty()) {
-            append("  ($comment)", SimpleTextAttributes.GRAYED_ATTRIBUTES)
-        }
-
-        // D. 如果有 count (比如文件夹下有几个接口)，也可以显示
-        if (apiNode.count > 0) {
-            append("  [${apiNode.count}]", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
+        // C. 显示描述 (灰色 + 小字)
+        if (apiNode.code_type == 3) {
+            append("  (${apiNode.path ?: ""})", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+        } else {
+            val comment = apiNode.alias ?: apiNode.desc
+            if (!comment.isNullOrEmpty()) {
+                append("  ($comment)", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+            }
         }
     }
 
-    // 辅助：给 HTTP 方法一点颜色看看
+    // 辅助：给 HTTP 方法一点颜色
     private fun getMethodColor(method: String?): java.awt.Color? {
         return when (method?.uppercase()) {
             "GET" -> java.awt.Color(73, 156, 84) // 绿色

@@ -11,6 +11,7 @@ import com.intellij.psi.PsiManager
 import com.sheldon.idea.plugin.api.utils.RouteKey
 import com.sheldon.idea.plugin.api.utils.RouteRegistry
 import com.sheldon.idea.plugin.api.utils.ScanSession
+import com.sheldon.idea.plugin.api.utils.SpringConfigReader
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterBuildRequest
@@ -30,14 +31,19 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
                     val rootDir = PsiManager.getInstance(project).findDirectory(folder.file ?: continue)
                         ?: continue
                     val baseDir = findBasePackageDirectory(rootDir) ?: rootDir
-                    collectRecursively(baseDir, module, routerRegistry)
+                    collectRecursively(baseDir, module, routerRegistry, SpringConfigReader.getSpringBaseUrl(module))
                 }
             }
             routerRegistry
         }
     }
 
-    private fun collectRecursively(currentDir: PsiDirectory, module: Module, routerRegistry: RouteRegistry) {
+    private fun collectRecursively(
+        currentDir: PsiDirectory,
+        module: Module,
+        routerRegistry: RouteRegistry,
+        prefix: String = "http://localhost:8080"
+    ) {
         // 1. 遍历当前目录下的文件
         for (file in currentDir.files) {
             // 只要 Java 文件
@@ -63,7 +69,8 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
                                     AfterBuildRequest(request).execute(
                                         methodHelper.project,
                                         methodHelper.module,
-                                        saveMock = session.saveMock
+                                        saveMock = session.saveMock,
+                                        prefix
                                     )
                                 }
                                 if (methodNode != null) {
@@ -83,7 +90,7 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
 
         // 2. 递归进入子目录
         for (subDir in currentDir.subdirectories) {
-            collectRecursively(subDir, module, routerRegistry)
+            collectRecursively(subDir, module, routerRegistry, prefix)
         }
     }
 }

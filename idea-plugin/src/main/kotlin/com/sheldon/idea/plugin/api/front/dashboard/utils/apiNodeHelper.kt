@@ -2,7 +2,7 @@ package com.sheldon.idea.plugin.api.front.dashboard.utils
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.wm.ToolWindow
-import com.sheldon.idea.plugin.api.front.dashboard.panel.ApiTreePanel
+import com.sheldon.idea.plugin.api.front.dashboard.component.ApiTreePanel
 import com.sheldon.idea.plugin.api.model.ApiNode
 import javax.swing.tree.DefaultMutableTreeNode
 

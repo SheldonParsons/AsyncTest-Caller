@@ -33,7 +33,7 @@ class BuildControllerNode(
                 classNode.addChild(newMethodNode)
             }
         }
-        if (classNode.children.isNullOrEmpty()) return null
+        if (classNode.children.isEmpty()) return null
         classNode.classRequest = null
         return classNode
     }
