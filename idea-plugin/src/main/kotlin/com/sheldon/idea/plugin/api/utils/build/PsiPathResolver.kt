@@ -3,7 +3,6 @@ package com.sheldon.idea.plugin.api.utils.build
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.psi.*
 
 object PsiPathResolver {
@@ -61,18 +60,8 @@ object PsiPathResolver {
      * 说明：Module 下面有多个 Source Root (src/main/java, src/test/java)，需要遍历查找
      */
     private fun findInModuleRoots(module: Module, segment: PathSegment): Any? {
-        val psiManager = PsiManager.getInstance(module.project)
-        // 获取模块所有的源码根目录 (VirtualFile)
-        val sourceRoots = ModuleRootManager.getInstance(module).sourceRoots
-
-        for (rootVirtualFile in sourceRoots) {
-            val rootDir = psiManager.findDirectory(rootVirtualFile) ?: continue
-
-            // 尝试在这个根目录下找
-            val found = findInDirectory(rootDir, segment)
-            if (found != null) return found
-        }
-        return null
+        val rootDir = BuildRootTree(module.project).getBaseDir(module) ?: return null
+        return findInDirectory(rootDir, segment)
     }
 
     /**

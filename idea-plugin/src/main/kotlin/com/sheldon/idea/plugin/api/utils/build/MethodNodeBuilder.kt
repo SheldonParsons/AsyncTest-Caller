@@ -5,9 +5,12 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiMethod
+import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.utils.RouteKey
 import com.sheldon.idea.plugin.api.utils.RouteRegistry
 import com.sheldon.idea.plugin.api.utils.ScanSession
@@ -23,18 +26,54 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             val routerRegistry = RouteRegistry()
             val modules = ModuleManager.getInstance(project).modules
             for (module in modules) {
-                val contentEntries = ModuleRootManager.getInstance(module).contentEntries
-                    .flatMap { it.sourceFolders.asList() }
-                for (folder in contentEntries) {
-                    val url = folder.url
-                    if (!url.contains("${module.name}/src/main/java")) continue
-                    val rootDir = PsiManager.getInstance(project).findDirectory(folder.file ?: continue)
-                        ?: continue
-                    val baseDir = findBasePackageDirectory(rootDir) ?: rootDir
+                val baseDir = BuildRootTree(module.project).getBaseDir(module)
+                if (baseDir != null) {
                     collectRecursively(baseDir, module, routerRegistry, SpringConfigReader.getSpringBaseUrl(module))
                 }
             }
             routerRegistry
+        }
+    }
+
+    fun scanModule(module: Module): RouteRegistry {
+        return runReadAction {
+            val routerRegistry = RouteRegistry()
+            val baseDir = BuildRootTree(module.project).getBaseDir(module)
+            if (baseDir != null) {
+                collectRecursively(baseDir, module, routerRegistry, SpringConfigReader.getSpringBaseUrl(module))
+            }
+            return@runReadAction routerRegistry
+        }
+    }
+
+    fun scanDir(module: Module, dir: PsiDirectory): RouteRegistry {
+        return runReadAction {
+            val routerRegistry = RouteRegistry()
+            collectRecursively(dir, module, routerRegistry, SpringConfigReader.getSpringBaseUrl(module))
+            return@runReadAction routerRegistry
+        }
+    }
+
+    fun scanClass(module: Module, psiClass: PsiClass): RouteRegistry {
+        return runReadAction {
+            val routerRegistry = RouteRegistry()
+            collectClass(module, psiClass, routerRegistry, prefix = SpringConfigReader.getSpringBaseUrl(module))
+            return@runReadAction routerRegistry
+        }
+    }
+
+    fun scanMethod(module: Module, psiMethod: PsiMethod, psiClass: PsiClass, classNode: ApiNode): RouteRegistry {
+        return runReadAction {
+            val routerRegistry = RouteRegistry()
+            collectMethod(
+                module,
+                psiClass,
+                psiMethod,
+                classNode,
+                routerRegistry,
+                prefix = SpringConfigReader.getSpringBaseUrl(module)
+            )
+            return@runReadAction routerRegistry
         }
     }
 
@@ -50,47 +89,62 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             if (file is PsiJavaFile) {
                 for (psiClass in file.classes) {
                     if (isController(psiClass)) {
-                        val classHelper = ClassHelper(module, project, psiClass)
-                        val methods = classHelper.getMethods()
-                        val classNode = makeClassNode(classHelper, psiClass, "")
-                        for (psiMethod in methods) {
-                            val containingClass = psiMethod.containingClass ?: continue
-                            val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
-                            if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
-                                continue
-                            }
-                            if (isMappingMethod(psiMethod)) {
-                                val methodNode = makeMethodNode(
-                                    methodHelper,
-                                    psiMethod,
-                                    module.name,
-                                    classNode
-                                ) { methodHelper, request ->
-                                    AfterBuildRequest(request).execute(
-                                        methodHelper.project,
-                                        methodHelper.module,
-                                        saveMock = session.saveMock,
-                                        prefix
-                                    )
-                                }
-                                if (methodNode != null) {
-                                    routerRegistry.register(
-                                        RouteKey(methodNode.method ?: "", methodNode.path ?: ""),
-                                        methodNode,
-                                        psiClass,
-                                        module.name
-                                    )
-                                }
-                            }
-                        }
+                        collectClass(module, psiClass, routerRegistry, prefix)
                     }
                 }
             }
         }
-
         // 2. 递归进入子目录
         for (subDir in currentDir.subdirectories) {
             collectRecursively(subDir, module, routerRegistry, prefix)
         }
+    }
+
+    private fun collectClass(module: Module, psiClass: PsiClass, routerRegistry: RouteRegistry, prefix: String) {
+        val classHelper = ClassHelper(module, project, psiClass)
+        val methods = classHelper.getMethods()
+        val classNode = makeClassNode(classHelper, psiClass, "")
+        for (psiMethod in methods) {
+            if (!collectMethod(module, psiClass, psiMethod, classNode, routerRegistry, prefix)) continue
+        }
+    }
+
+    private fun collectMethod(
+        module: Module,
+        psiClass: PsiClass,
+        psiMethod: PsiMethod,
+        classNode: ApiNode,
+        routerRegistry: RouteRegistry,
+        prefix: String = ""
+    ): Boolean {
+        val containingClass = psiMethod.containingClass ?: return false
+        val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
+        if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
+            return false
+        }
+        if (isMappingMethod(psiMethod)) {
+            val methodNode = makeMethodNode(
+                methodHelper,
+                psiMethod,
+                module.name,
+                classNode
+            ) { methodHelper, request ->
+                AfterBuildRequest(request).execute(
+                    methodHelper.project,
+                    methodHelper.module,
+                    saveMock = session.saveMock,
+                    prefix
+                )
+            }
+            if (methodNode != null) {
+                routerRegistry.register(
+                    RouteKey(methodNode.method ?: "", methodNode.path ?: ""),
+                    methodNode,
+                    psiClass,
+                    module.name
+                )
+            }
+        }
+        return true
     }
 }

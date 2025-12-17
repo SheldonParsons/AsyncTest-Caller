@@ -97,9 +97,9 @@ abstract class TreeBuilder {
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.CLASS.code,
             name = psiClass.name ?: "Unknown",
-            treePath = "${parentPath}[${CodeType.CLASS.code}]",
-            alias = "${clsAlias}3",
-            desc = "${clsDesc}4",
+            treePath = parentPath,
+            alias = "$clsAlias",
+            desc = "$clsDesc",
             classRequest = request
         )
     }

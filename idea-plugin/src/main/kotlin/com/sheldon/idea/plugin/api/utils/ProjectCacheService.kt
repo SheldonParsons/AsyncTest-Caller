@@ -218,6 +218,10 @@ class ProjectCacheService(val project: Project) : PersistentStateComponent<Cache
         state.moduleRequestMap.clear()
     }
 
+    fun cleanRequest(moduleName: String, key: String) {
+        state.moduleRequestMap[moduleName]?.mapping?.remove(key)
+    }
+
     fun cleanModuleRequestMocks(moduleName: String) {
         state.moduleRequestMockMap.remove(moduleName)
     }

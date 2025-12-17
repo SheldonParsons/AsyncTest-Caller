@@ -9,7 +9,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 fun ApiNode.toTreeNode(): DefaultMutableTreeNode {
     val treeNode = DefaultMutableTreeNode(this)
 
-    this.children?.forEach { childApiNode ->
+    this.children.forEach { childApiNode ->
         treeNode.add(childApiNode.toTreeNode())
     }
 
@@ -18,17 +18,11 @@ fun ApiNode.toTreeNode(): DefaultMutableTreeNode {
 
 
 object ApiTreeHelper {
-
-    /**
-     * 静态方法：从外部更新 API 树
-     * @param project 当前项目
-     * @param rootNode 你准备好的数据
-     */
     fun refreshTree(toolWindow: ToolWindow, rootNode: ApiNode) {
         // 1. UI 操作必须在 EDT 线程执行
         ApplicationManager.getApplication().invokeLater {
             // 3. 防御性检查：窗口可能还没初始化（用户没点开过）
-            if (toolWindow == null || !toolWindow.isAvailable) {
+            if (!toolWindow.isAvailable) {
                 return@invokeLater
             }
 

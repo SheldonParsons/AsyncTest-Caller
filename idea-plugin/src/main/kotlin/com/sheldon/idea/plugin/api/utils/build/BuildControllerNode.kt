@@ -37,4 +37,24 @@ class BuildControllerNode(
         classNode.classRequest = null
         return classNode
     }
+
+    fun buildMethod(psiClass: PsiClass, pathPrefix: String, routeRegistry: RouteRegistry): ApiNode? {
+        val classHelper = ClassHelper(module, project, psiClass)
+        val classNode = makeClassNode(classHelper, psiClass, pathPrefix)
+        var newMethodNode: ApiNode? = null
+        BuildMethodNode(module, project).build(
+            classHelper,
+            psiClass,
+            classNode.treePath,
+            classNode
+        ) { methodNode: ApiNode ->
+            newMethodNode = routeRegistry.getApiNode(
+                module.name,
+                RouteKey(methodNode.method ?: "", methodNode.path ?: ""),
+                psiClass
+            )
+            newMethodNode?.let { it.treePath = "$pathPrefix.${it.name}[3]" }
+        }
+        return newMethodNode
+    }
 }
