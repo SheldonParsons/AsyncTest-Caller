@@ -63,7 +63,7 @@ class BuildDirectoryTree(
                 for (psiClass in file.classes) {
                     if (isController(psiClass)) {
                         // 这里传入 currentNode.treePath 或者 pathPrefix 都可以，看你 nextBuild 具体的需要
-                        val classNode = nextBuild(psiClass, currentNode.treePath)
+                        val classNode = nextBuild(psiClass, currentNode.tree_path)
                         if (classNode != null) {
                             currentNode.addChild(classNode)
                         }
@@ -88,7 +88,7 @@ class BuildDirectoryTree(
             recursiveBuild(
                 currentDir = subDir,
                 parentNode = dirNode,
-                pathPrefix = dirNode.treePath,
+                pathPrefix = dirNode.tree_path,
                 nextBuild = nextBuild
             )
 

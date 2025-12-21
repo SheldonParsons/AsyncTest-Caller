@@ -89,6 +89,7 @@ fun DataStructure.calculateSafeHash(): String {
         update(node.name)
         update(node.dsTarget)
         update(node.statement)
+        update(node.contentType)
         update(if (node.required) "1" else "0")
 
         md.update(2) // 子节点开始符

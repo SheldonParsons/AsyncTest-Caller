@@ -17,7 +17,7 @@ data class ApiNode(
     var name: String = "",
     var alias: String? = null,
     var desc: String? = null,
-    var treePath: String = "",
+    var tree_path: String = "",
     @XCollection(propertyElementName = "child")
     var children: ArrayList<ApiNode> = arrayListOf(),
     var request: String? = null,

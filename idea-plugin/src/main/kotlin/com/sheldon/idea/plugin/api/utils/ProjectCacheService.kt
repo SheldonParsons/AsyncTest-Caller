@@ -62,13 +62,20 @@ class ProjectCacheService(val project: Project) : PersistentStateComponent<Cache
         state.asynctestInfo = info
     }
 
-    fun getModuleSetting(moduleName: String): ModuleSetting? {
-        return state.moduleSettingMap.get(moduleName)
+    fun getModuleSetting(projectName: String): ArrayList<ModuleSetting> {
+        return state.moduleSettingMap.getOrPut(projectName) { arrayListOf() }
     }
 
-    fun saveModuleSetting(moduleName: String, setting: ModuleSetting) {
-        state.moduleSettingMap[moduleName] = setting
+    fun saveModuleSetting(projectName: String, setting: ModuleSetting) {
+        state.moduleSettingMap
+            .getOrPut(projectName) { arrayListOf() }
+            .add(setting)
     }
+
+    fun cleanModuleSetting(projectName: String) {
+        state.moduleSettingMap.getOrPut(projectName) { arrayListOf() }.clear()
+    }
+
 
     fun getModuleTree(moduleName: String): ApiNode? {
         return state.moduleTreeMap[moduleName]

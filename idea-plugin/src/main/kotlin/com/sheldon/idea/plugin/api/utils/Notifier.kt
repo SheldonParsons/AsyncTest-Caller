@@ -24,7 +24,7 @@ object Notifier {
      * @param title 标题
      * @param content 内容
      */
-    fun notifyInfo(project: Project?, title: String, content: String) {
+    fun notifyInfo(project: Project?, title: String = "AsyncTest Caller", content: String) {
         NOTIFICATION_GROUP
             .createNotification(title, content, NotificationType.INFORMATION)
             .notify(project)
@@ -33,7 +33,7 @@ object Notifier {
     /**
      * 发送错误 (红色) 气泡通知
      */
-    fun notifyError(project: Project?, title: String, content: String) {
+    fun notifyError(project: Project?, title: String = "AsyncTest Caller", content: String) {
         NOTIFICATION_GROUP
             .createNotification(title, content, NotificationType.ERROR)
             .notify(project)
@@ -42,7 +42,7 @@ object Notifier {
     /**
      * 发送警告 (黄色) 气泡通知
      */
-    fun notifyWarning(project: Project?, title: String, content: String) {
+    fun notifyWarning(project: Project?, title: String = "AsyncTest Caller", content: String = "") {
         NOTIFICATION_GROUP
             .createNotification(title, content, NotificationType.WARNING)
             .notify(project)

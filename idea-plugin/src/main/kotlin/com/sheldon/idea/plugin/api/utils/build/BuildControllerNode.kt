@@ -20,7 +20,7 @@ class BuildControllerNode(
         BuildMethodNode(module, project).build(
             classHelper,
             psiClass,
-            classNode.treePath,
+            classNode.tree_path,
             classNode
         ) { methodNode: ApiNode ->
             val newMethodNode = routeRegistry.getApiNode(
@@ -29,7 +29,7 @@ class BuildControllerNode(
                 psiClass
             )
             if (newMethodNode != null) {
-                newMethodNode.treePath = "$classPath.${newMethodNode.name}[3]"
+                newMethodNode.tree_path = "$classPath.${newMethodNode.name}[3]"
                 classNode.addChild(newMethodNode)
             }
         }
@@ -45,7 +45,7 @@ class BuildControllerNode(
         BuildMethodNode(module, project).build(
             classHelper,
             psiClass,
-            classNode.treePath,
+            classNode.tree_path,
             classNode
         ) { methodNode: ApiNode ->
             newMethodNode = routeRegistry.getApiNode(
@@ -53,7 +53,7 @@ class BuildControllerNode(
                 RouteKey(methodNode.method ?: "", methodNode.path ?: ""),
                 psiClass
             )
-            newMethodNode?.let { it.treePath = "$pathPrefix.${it.name}[3]" }
+            newMethodNode?.let { it.tree_path = "$pathPrefix.${it.name}[3]" }
         }
         return newMethodNode
     }

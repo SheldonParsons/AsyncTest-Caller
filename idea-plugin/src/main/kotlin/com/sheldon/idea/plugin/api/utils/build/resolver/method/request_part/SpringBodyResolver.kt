@@ -14,7 +14,6 @@ import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.model.DataStructure
 import com.sheldon.idea.plugin.api.service.SpringClassName
-import com.sheldon.idea.plugin.api.utils.ProjectCacheService
 import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterNode
@@ -47,7 +46,9 @@ class SpringBodyResolver(val module: Module) :
                 // =======================================================
                 // 验证打印逻辑 START
                 // =======================================================
-                val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+//                val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+//
+//                val cacheService = ProjectCacheService.getInstance(module.project)
 
 //                println("\n========== [1] API 请求体结构 (Root) ==========")
 //                // 预期：Root 是实心的，但其子 DS 节点 (如 data) 是空心的 (children=[])
@@ -58,7 +59,7 @@ class SpringBodyResolver(val module: Module) :
 //                val allDefs = cacheService.getDataStructureMapping(module.name)?.mapping
 //                println("allDefs.size:${allDefs?.size}")
 //                allDefs?.forEach { (id, node) ->
-//                    println(">>> 定义 ID: $id")
+//                    println(">>> 定义 ID: ${id},module: ${module.name}")
 //                    println(">>> alias: ${node.alias}")
 //                    println(gson.toJson(node.data))
 //                    println("--------------------------------------------------")
@@ -108,6 +109,7 @@ class SpringBodyResolver(val module: Module) :
             val resolveResult = PsiUtil.resolveGenericsClassInType(psiType)
             val psiClass = resolveResult.element ?: return node
             node.dsTarget = psiType.canonicalText
+            node.contentType = psiType.presentableText
             val dsTargetId = node.dsTarget ?: ""
             // 提取类的注释
             if (node.statement.isEmpty()) {
@@ -119,12 +121,9 @@ class SpringBodyResolver(val module: Module) :
             if (isRoot) {
                 // === 情况 A: 我是根节点 (Root) ===
                 // 需求：显示所有字段。
-
+                node.name = psiType.presentableText
                 // 1. 标记为已处理 (Root 自己也需要防止被子孙节点引用导致死循环)
                 sessionIds.add(dsTargetId)
-
-                node.name = psiType.presentableText
-
                 // 2. 直接在当前 node 上填充 children (变实心)
                 parsePojoFields(psiClass, resolveResult.substitutor, node, sessionIds)
                 // 存入持久层
@@ -132,6 +131,7 @@ class SpringBodyResolver(val module: Module) :
                     alias = psiType.presentableText,
                     data = mutableListOf(node)
                 )
+
                 ds.hash = ds.calculateSafeHash()
                 AfterNode.execute(module, dsTargetId, ds)
                 // 4. 返回这个填满数据的 node
@@ -213,7 +213,7 @@ class SpringBodyResolver(val module: Module) :
         // 1. 创建一个新的定义节点
         val definitionNode = AsyncTestVariableNode(
             type = AsyncTestType.DS,
-            name = "root",
+            name = psiType.presentableText,
             dsTarget = dsTargetId
         )
         val classComment = ResolverHelper.getElementComment(psiClass)

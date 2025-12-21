@@ -15,7 +15,7 @@ data class CacheState(
         entryTagName = "entry",
         keyAttributeName = "key"
     )
-    var moduleSettingMap: java.util.HashMap<String, ModuleSetting> = java.util.HashMap(),
+    var moduleSettingMap: java.util.HashMap<String, ArrayList<ModuleSetting>> = java.util.HashMap(),
     @get:com.intellij.util.xmlb.annotations.Tag("moduleTreeMap")
     @get:com.intellij.util.xmlb.annotations.MapAnnotation(
         surroundWithTag = true,

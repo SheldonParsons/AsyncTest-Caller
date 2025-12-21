@@ -31,7 +31,7 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
         val moduleNode = makeRootNode(module)
         val baseDir = getBaseDir(module)
         if (baseDir != null) {
-            nextBuild(baseDir, moduleNode, moduleNode.treePath, module)
+            nextBuild(baseDir, moduleNode, moduleNode.tree_path, module)
         }
         return moduleNode
     }

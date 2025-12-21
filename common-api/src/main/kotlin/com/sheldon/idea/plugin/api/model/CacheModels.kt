@@ -4,7 +4,7 @@ package com.sheldon.idea.plugin.api.model
 data class GlobalSettings(
     var publicServerUrl: String = "https://www.asynctest.com",
     var usingPublic: Boolean = true,
-    var customerServerUrl: String = ""
+    var customerServerUrl: String = "https://www.asynctest.com"
 )
 
 data class PrivateInfo(
@@ -18,10 +18,18 @@ data class AsyncTestInfo(
     var projectList: ArrayList<RemoteProject> = ArrayList()
 )
 
-data class RemoteProject(var id: String = "", var name: String = "")
+data class RemoteProject(var id: String = "", var name: String = "") {
+    override fun toString(): String {
+        return name
+    }
+}
 
 // 4. 模块级别设置
-data class ModuleSetting(var moduleInfo: String = "", var bindProject: RemoteProject)
+data class ModuleSetting(
+    var moduleInfo: String = "",
+    var bindProject: RemoteProject = RemoteProject(),
+    var bindVersion: String = ""
+)
 
 // request 映射 <Method+Path, ApiRequest>
 data class ModuleRequestMapping(var mapping: java.util.HashMap<String, ApiRequest> = java.util.HashMap())

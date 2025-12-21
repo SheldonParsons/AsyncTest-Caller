@@ -69,7 +69,7 @@ abstract class TreeBuilder {
             child_type = ChildNodeType.ROOT_DIR.code,
             code_type = CodeType.MODULE.code,
             name = module.name,
-            treePath = "${module.name}[${CodeType.MODULE.code}]",
+            tree_path = "${module.name}[${CodeType.MODULE.code}]",
             alias = "",
             desc = "",
         )
@@ -83,7 +83,7 @@ abstract class TreeBuilder {
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.DIR.code,
             name = subDir.name,
-            treePath = "${parentPath}[${CodeType.DIR.code}]",
+            tree_path = "${parentPath}[${CodeType.DIR.code}]",
             alias = "",
             desc = "",
         )
@@ -97,7 +97,7 @@ abstract class TreeBuilder {
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.CLASS.code,
             name = psiClass.name ?: "Unknown",
-            treePath = parentPath,
+            tree_path = parentPath,
             alias = "$clsAlias",
             desc = "$clsDesc",
             classRequest = request
@@ -115,13 +115,14 @@ abstract class TreeBuilder {
         val request: ApiRequest = methodHelper.getMethodNodeCoreInfo(classNode) ?: return null
         request.path = PathUtils.normalizeToAsyncTestPath(request.path)
         val hash = request.calculateSafeHash()
+        request.hash = hash
         val requestKey = callback(methodHelper, request)
         val result = ApiNode(
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.INTERFACE_NODE.code,
             code_type = CodeType.METHOD.code,
             name = psiMethod.name,
-            treePath = "${prefixPath}.${psiMethod.name}[${CodeType.METHOD.code}]",
+            tree_path = "${prefixPath}.${psiMethod.name}[${CodeType.METHOD.code}]",
             alias = mAlias,
             desc = mDesc,
             request = requestKey,
@@ -152,7 +153,7 @@ abstract class TreeBuilder {
             child_type = ChildNodeType.INTERFACE_NODE.code,
             code_type = CodeType.METHOD.code,
             name = psiMethod.name,
-            treePath = "$prefixPath.${psiMethod.name}",
+            tree_path = "$prefixPath.${psiMethod.name}",
             request = requestKey,
             path = request.path,
             method = request.method

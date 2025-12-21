@@ -1,8 +1,11 @@
 package com.sheldon.idea.plugin.api.front.dashboard.component
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
+import com.google.gson.reflect.TypeToken
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.*
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
 import com.intellij.openapi.module.Module
@@ -10,22 +13,29 @@ import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
+import com.sheldon.idea.plugin.api.constant.AsyncTestConstant
 import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.front.dashboard.renderer.ApiTreeCellRenderer
+import com.sheldon.idea.plugin.api.front.dashboard.utils.DependencyCollector
 import com.sheldon.idea.plugin.api.front.dashboard.utils.toTreeNode
+import com.sheldon.idea.plugin.api.method.ValidType
 import com.sheldon.idea.plugin.api.model.ApiNode
-import com.sheldon.idea.plugin.api.service.SpringWebScanner
+import com.sheldon.idea.plugin.api.model.AstResponse
+import com.sheldon.idea.plugin.api.model.AsyncTestDataResponse
+import com.sheldon.idea.plugin.api.model.AsyncTestSyncTree
+import com.sheldon.idea.plugin.api.model.AsyncTestUpdateDataRequest
+import com.sheldon.idea.plugin.api.model.CollectNodeData
+import com.sheldon.idea.plugin.api.model.ModuleSetting
+import com.sheldon.idea.plugin.api.utils.HttpExecutor
 import com.sheldon.idea.plugin.api.utils.Notifier
 import com.sheldon.idea.plugin.api.utils.ProjectCacheService
-import com.sheldon.idea.plugin.api.utils.RouteKey
 import com.sheldon.idea.plugin.api.utils.ScanSession
-import com.sheldon.idea.plugin.api.utils.build.BuildController
 import com.sheldon.idea.plugin.api.utils.build.BuildControllerNode
 import com.sheldon.idea.plugin.api.utils.build.BuildDirectoryTree
-import com.sheldon.idea.plugin.api.utils.build.BuildMethodNode
 import com.sheldon.idea.plugin.api.utils.build.BuildRootTree
 import com.sheldon.idea.plugin.api.utils.build.MethodNodeBuilder
 import com.sheldon.idea.plugin.api.utils.build.PsiPathResolver
@@ -85,10 +95,10 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
 
         project.context()
             .runBackgroundReadUI(
-                lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = {p->
-                    return@runBackgroundReadUI PsiPathResolver.resolve(p, apiNode.treePath)
+                lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
+                    return@runBackgroundReadUI PsiPathResolver.resolve(p, apiNode.tree_path)
                 },
-                uiUpdate = {psiElement, p ->
+                uiUpdate = { psiElement, p ->
                     if (psiElement is Navigatable && psiElement.canNavigate()) {
                         psiElement.navigate(true)
                     }
@@ -132,8 +142,8 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                 tree.isEnabled = false
                 project.context()
                     .runBackgroundReadUI(lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
-                        println("apiNode.treePath:${apiNode.treePath}")
-                        val resultElementType = PsiPathResolver.resolve(p, apiNode.treePath)
+                        println("apiNode.treePath:${apiNode.tree_path}")
+                        val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)
                         var node: ApiNode? = null
                         val cacheService = ProjectCacheService.getInstance(p)
                         // TODO:清除节点中的request
@@ -170,13 +180,13 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                             MethodNodeBuilder(project, session).scanDir(module, resultElementType)
                                         val newNode = BuildDirectoryTree(module, project).buildDir(
                                             resultElementType,
-                                            oldParentNode.treePath,
+                                            oldParentNode.tree_path,
                                         ) { psiClass, pathPrefix ->
                                             BuildControllerNode(module, project).build(
                                                 psiClass, pathPrefix, routeRegistry
                                             )
                                         }
-                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.treePath, newNode)
+                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
                                         if (replaceResult == 1) {
                                             cacheService.saveModuleTree(module.name, moduleTree)
                                             node = newNode
@@ -196,9 +206,9 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                         val routeRegistry =
                                             MethodNodeBuilder(project, session).scanClass(module, resultElementType)
                                         val newNode = BuildControllerNode(module, project).build(
-                                            resultElementType, oldParentNode.treePath, routeRegistry
+                                            resultElementType, oldParentNode.tree_path, routeRegistry
                                         ) ?: return@runBackgroundReadUI null
-                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.treePath, newNode)
+                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
                                         if (replaceResult == 1) {
                                             cacheService.saveModuleTree(module.name, moduleTree)
                                             node = newNode
@@ -224,9 +234,9 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                                 oldParentNode
                                             )
                                         val newNode = BuildControllerNode(module, project).buildMethod(
-                                            psiClass, oldParentNode.treePath, routeRegistry
+                                            psiClass, oldParentNode.tree_path, routeRegistry
                                         ) ?: return@runBackgroundReadUI null
-                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.treePath, newNode)
+                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
                                         if (replaceResult == 1) {
                                             cacheService.saveModuleTree(module.name, moduleTree)
                                             node = newNode
@@ -250,7 +260,183 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
 
         actionGroup.add(object : AnAction("上传 AsyncTest", "Upload to AsyncTest", AstCallerIcons.Logo) {
             override fun actionPerformed(event: AnActionEvent) {
-                println("查看详情: ${apiNode.name}")
+                tree.isEnabled = false
+                val cacheService = ProjectCacheService.getInstance(project)
+                project.context()
+                    .runBackgroundReadUI(lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
+                        println("apiNode.treePath:${apiNode.tree_path}")
+                        var isModule = false
+                        var hasMatch = false
+                        var currentBindProject = ModuleSetting()
+                        var currentUrl = ""
+                        var currentToken = ""
+                        val globalSetting = cacheService.getGlobalSettings()
+                        if (globalSetting.usingPublic) {
+                            currentUrl = globalSetting.publicServerUrl
+                        } else {
+                            currentUrl = globalSetting.customerServerUrl
+                        }
+                        if (currentUrl.isEmpty()) {
+                            return@runBackgroundReadUI ValidType.NO_SET_URL
+                        }
+                        val privateInfo = cacheService.getPrivateInfo()
+                        if (privateInfo.token.isEmpty()) {
+                            return@runBackgroundReadUI ValidType.NO_TOKEN
+                        } else {
+                            currentToken = privateInfo.token
+                        }
+                        val moduleBindList: ArrayList<ModuleSetting> = cacheService.getModuleSetting(project.name)
+                        val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)
+                        val module: Module
+                        if (resultElementType is Module) {
+                            isModule = true
+                            module = resultElementType
+                        } else {
+                            module = ModuleUtilCore.findModuleForPsiElement(resultElementType as PsiElement)!!
+                        }
+                        moduleBindList.forEach { moduleSetting ->
+                            if (moduleSetting.moduleInfo == module.name) {
+                                currentBindProject = moduleSetting
+                                hasMatch = true
+                                return@forEach
+                            }
+                        }
+                        if (!hasMatch) {
+                            return@runBackgroundReadUI ValidType.NO_MATCH_MODULE_PROJECT
+                        }
+                        val collectDs = DependencyCollector(project, module.name).collect(apiNode)
+                        return@runBackgroundReadUI CollectNodeData(
+                            currentUrl,
+                            currentToken,
+                            currentBindProject,
+                            collectDs,
+                            apiNode,
+                            isModule,
+                            module.name
+                        )
+                    }, uiUpdate = { result, p ->
+                        if (result == ValidType.NO_MATCH_MODULE_PROJECT) {
+                            Notifier.notifyWarning(
+                                project = project,
+                                content = "没有找到该模块的绑定项目配置，请在Settings中进行配置。"
+                            )
+                            tree.isEnabled = true
+                        } else if (result == ValidType.NO_SET_URL) {
+                            Notifier.notifyWarning(
+                                project = project,
+                                content = "没有设置url，请在Settings中进行配置。"
+                            )
+                            tree.isEnabled = true
+                        } else if (result == ValidType.NO_TOKEN) {
+                            Notifier.notifyWarning(
+                                project = project,
+                                content = "没有设置token，请在Settings中进行配置。"
+                            )
+                            tree.isEnabled = true
+                        } else {
+
+                            project.context().runBackgroundReadUI(
+                                lockKey = CommonConstant.AST_CALLER_GLOBAL_HTTP_ACTION,
+                                requiresReadAction = false,
+                                backgroundTask = { p ->
+                                    val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+                                    val result: CollectNodeData = result as CollectNodeData
+                                    // 2. 序列化并打印
+                                    val requestBodyJson = gson.toJson(
+                                        AsyncTestSyncTree(
+                                            result.apiNode,
+                                            result.dsMapping,
+                                            result.projectInfo.bindProject.id,
+                                            result.isModule
+                                        )
+                                    )
+                                    val httpExecutor = HttpExecutor()
+                                    httpExecutor.setMethod("POST")
+                                    httpExecutor.setUrl(result.url + AsyncTestConstant.SYNC_TREE_NODE)
+                                    httpExecutor.setHeader("content-type", "application/json")
+                                    httpExecutor.setHeader("Authorization", result.token)
+                                    httpExecutor.setBody(requestBodyJson)
+                                    val response = httpExecutor.send()
+                                    println("response:${response}")
+                                    try {
+                                        val element = JsonParser.parseString(response)
+                                        val type = object : TypeToken<AstResponse<AsyncTestDataResponse>>() {}.type
+                                        val responseObject: AstResponse<AsyncTestDataResponse> =
+                                            Gson().fromJson(element, type)
+                                        if (responseObject.result == 0) {
+                                            return@runBackgroundReadUI responseObject.msg
+                                        } else {
+                                            val actionData = responseObject.msg.tree_action
+                                            val dsChangeList = responseObject.msg.ds_change_list
+                                            val updateRequest =
+                                                AsyncTestUpdateDataRequest(
+                                                    mutableMapOf(),
+                                                    mutableMapOf(),
+                                                    mutableListOf(),
+                                                    result.projectInfo.bindProject.id,
+                                                    result.isModule,
+                                                )
+                                            for ((key, value) in actionData.to_create) {
+                                                val request = cacheService.getRequest(result.module, key)
+                                                if (request != null) {
+                                                    updateRequest.request_mapping[key] = request
+                                                }
+                                            }
+                                            for ((key, value) in actionData.to_update) {
+                                                val request = cacheService.getRequest(result.module, key)
+                                                if (request != null) {
+                                                    updateRequest.request_mapping[key] = request
+                                                }
+                                            }
+                                            actionData.to_delete.forEach { content ->
+                                                updateRequest.delete_request.add(content)
+                                            }
+                                            dsChangeList.forEach { content ->
+                                                val ds = cacheService.getDataStructure(result.module, content)
+                                                if (ds != null) {
+                                                    updateRequest.ds_mapping[content] = ds
+                                                }
+                                            }
+                                            val requestBodyJson = gson.toJson(updateRequest)
+                                            println("requestBodyJson:${requestBodyJson}")
+                                            val httpExecutor = HttpExecutor()
+                                            httpExecutor.setMethod("POST")
+                                            httpExecutor.setUrl(result.url + AsyncTestConstant.SYNC_TREE_DATA)
+                                            httpExecutor.setHeader("content-type", "application/json")
+                                            httpExecutor.setHeader("Authorization", result.token)
+                                            httpExecutor.setBody(requestBodyJson)
+                                            val response = httpExecutor.send()
+                                            return@runBackgroundReadUI ValidType.SUCCESS
+                                        }
+                                    } catch (e: Exception) {
+                                        return@runBackgroundReadUI ValidType.TO_JSON_FAILED
+                                    }
+
+                                },
+                                uiUpdate = { result, p ->
+                                    if (result == ValidType.TO_JSON_FAILED) {
+                                        Notifier.notifyWarning(
+                                            project = project,
+                                            content = "AsyncTest服务错误，请联系作者<leesheldonparsons@gmail.com>。"
+                                        )
+                                    } else if (result == ValidType.SUCCESS) {
+                                        Notifier.notifyInfo(
+                                            project = project,
+                                            content = "更新成功"
+                                        )
+                                    } else if (result is String) {
+                                        Notifier.notifyWarning(
+                                            project = project,
+                                            content = result
+                                        )
+                                    }
+                                }
+                            )
+                            tree.isEnabled = true
+                        }
+
+
+                    })
             }
         })
 
@@ -272,7 +458,7 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
     ): Triple<ApiNode, ApiNode, ApiNode>? {
         val moduleTree =
             cacheService.getModuleTree(module.name) ?: return null
-        val result = moduleTree.findNodeWithParent(apiNode.treePath)
+        val result = moduleTree.findNodeWithParent(apiNode.tree_path)
             ?: return null
         val (oldNode, oldParentNode) = result
         if (oldParentNode == null) return null

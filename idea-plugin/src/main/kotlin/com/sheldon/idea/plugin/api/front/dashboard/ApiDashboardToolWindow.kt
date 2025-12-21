@@ -1,5 +1,6 @@
 package com.sheldon.idea.plugin.api.front.dashboard
 
+import com.google.gson.GsonBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -23,6 +24,11 @@ class ApiDashboardToolWindow : ToolWindowFactory {
         val content = contentFactory.createContent(dashboardPanel.getContent(), "接口", true)
         toolWindow.contentManager.addContent(content)
         TreeAction.reloadTree(project) { treeMap, _ ->
+            val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+
+            // 2. 序列化并打印
+            val jsonString = gson.toJson(treeMap)
+            println("jsonString: $jsonString")
             val rootNode = treeMap.first().value
             dashboardPanel.moduleSelector.updateDropdown(treeMap.keys)
             dashboardPanel.moduleSelector.isEditable = true
