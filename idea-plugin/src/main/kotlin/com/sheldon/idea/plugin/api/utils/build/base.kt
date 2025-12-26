@@ -7,6 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethod
 import com.intellij.openapi.module.Module
+import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiType
 import com.sheldon.idea.plugin.api.method.ParamLocation
@@ -25,17 +26,10 @@ import com.sheldon.idea.plugin.api.utils.calculateSafeHash
 
 abstract class TreeBuilder {
 
-    /**
-     * 算法：深度优先寻找第一个包含 .java 文件的目录
-     * 这就是你要求的“根据第一个 Java 文件确定锚点”
-     */
     fun findBasePackageDirectory(dir: PsiDirectory): PsiDirectory? {
-        // 检查当前目录下是否有 Java 文件
         if (dir.files.any { it is PsiJavaFile }) {
             return dir
         }
-
-        // 如果没有，继续往子目录找 (取第一个非空子目录)
         for (sub in dir.subdirectories) {
             val found = findBasePackageDirectory(sub)
             if (found != null) return found
@@ -44,14 +38,10 @@ abstract class TreeBuilder {
     }
 
     fun isController(psiClass: PsiClass): Boolean {
-        // 检查类上是否有 @org.springframework.stereotype.Controller 注解
-        // 如果是注解定义，直接返回
         if (psiClass.isAnnotationType) return false
-        // 如果是抽象类或者是接口直接忽略
         if (psiClass.isInterface || psiClass.hasModifierProperty(PsiModifier.ABSTRACT)) {
             return false
         }
-        // 排除匿名内部类
         if (psiClass.name == null) return false
         return AnnotationResolver.hasAnnotations(
             psiClass, SpringClassName.SPRING_CONTROLLER_ANNOTATION, findAll = false
@@ -59,8 +49,18 @@ abstract class TreeBuilder {
     }
 
     fun isMappingMethod(method: PsiMethod): Boolean {
-        // 简单判断：只要有注解且注解名包含 Mapping 就认为是接口方法
-        return SpringClassName.SPRING_SINGLE_REQUEST_MAPPING_ANNOTATIONS.any { method.hasAnnotation(it) }
+        if (hasRequestMappingAnnotation(method)) return true
+
+        for (superMethod in method.findSuperMethods(true)) {
+            if (hasRequestMappingAnnotation(superMethod)) return true
+        }
+
+        return false
+    }
+
+    private fun hasRequestMappingAnnotation(method: PsiMethod): Boolean {
+        val annotations: Array<PsiAnnotation> = method.modifierList.annotations
+        return annotations.any { SpringClassName.SPRING_SINGLE_REQUEST_MAPPING_ANNOTATIONS.contains(it.qualifiedName) }
     }
 
     fun makeRootNode(module: Module): ApiNode {
@@ -96,10 +96,10 @@ abstract class TreeBuilder {
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.CLASS.code,
-            name = psiClass.name ?: "Unknown",
+            name = psiClass.name ?: "",
             tree_path = parentPath,
-            alias = "$clsAlias",
-            desc = "$clsDesc",
+            alias = clsAlias ?: "",
+            desc = clsDesc ?: "",
             classRequest = request
         )
     }
@@ -114,6 +114,9 @@ abstract class TreeBuilder {
         val (mAlias, mDesc) = methodHelper.parseDoc(psiMethod)
         val request: ApiRequest = methodHelper.getMethodNodeCoreInfo(classNode) ?: return null
         request.path = PathUtils.normalizeToAsyncTestPath(request.path)
+        request.name = psiMethod.name
+        request.alias = mAlias ?: ""
+        request.desc = mDesc ?: ""
         val hash = request.calculateSafeHash()
         request.hash = hash
         val requestKey = callback(methodHelper, request)
@@ -130,7 +133,6 @@ abstract class TreeBuilder {
             method = request.method,
             hash = hash
         )
-
         return result
     }
 
@@ -162,32 +164,19 @@ abstract class TreeBuilder {
 }
 
 abstract class BaseHelper {
-
     object DocHelper {
-
         fun parseDoc(element: PsiElement): Pair<String?, String?> {
             if (element !is PsiDocCommentOwner) return null to null
             val docComment = element.docComment ?: return null to null
-
-            // 1. 获取原始文档内容 (包含 HTML 标签和格式符号)
             val rawText = docComment.descriptionElements.joinToString("") { it.text }
-
-            // 2. 【核心步骤】全局标准化清洗
             val cleanText = normalizeJavadoc(rawText)
-
-            // 3. 按空行/换行符拆分，提取 Alias 和 Desc
-            // 过滤掉因为替换标签产生的多余空行
             val validLines = cleanText.lines().map { it.trim() }.filter { it.isNotEmpty() }
-
             val alias = validLines.firstOrNull()
-
-            // 剩下的作为描述
             val desc = if (validLines.size > 1) {
                 validLines.drop(1).joinToString("\n")
             } else {
                 null
             }
-
             return alias to desc
         }
 
@@ -196,30 +185,17 @@ abstract class BaseHelper {
          */
         private fun normalizeJavadoc(text: String): String {
             var result = text
-
-            // A. 去除 Javadoc 的装饰符号 (行首的 *, /**, */)
-            // (?m) 开启多行模式，^[\s]*\* 匹配每行开头的空白和星号
             result = result.replace(Regex("(?m)^[\\s]*\\*+"), "")
-                .replace(Regex("^/\\*+"), "") // 去除开头的 /**
-                .replace(Regex("\\*+/$"), "") // 去除结尾的 */
-
-            // B. 处理块级标签 -> 替换为换行符 (让它们自然隔开文本)
-            // 比如 <p>首页</p> 变成 \n首页\n
+                .replace(Regex("^/\\*+"), "")
+                .replace(Regex("\\*+/$"), "")
             result = result.replace(Regex("(?i)</?(p|br|div|li|ul|h\\d)[^>]*>"), "\n")
-
-            // C. 移除剩下的内联 HTML 标签 (如 <span>, <a>, <b>)
             result = result.replace(Regex("<[^>]+>"), "")
-
-            // D. 处理 Javadoc 标签 {@link Xxx} -> Xxx
             result = result.replace(Regex("\\{@\\w+\\s+(.*?)\\}"), "$1")
-
-            // E. 处理 HTML 转义 (常见的一些)
             result = result.replace("&nbsp;", " ")
                 .replace("&lt;", "<")
                 .replace("&gt;", ">")
                 .replace("&amp;", "&")
                 .replace("&quot;", "\"")
-
             return result
         }
     }
@@ -229,13 +205,10 @@ abstract class BaseHelper {
     }
 }
 
-/**
- * 单个参数的分析结果 (中间态)
- * SpringParameterResolver 会返回这个对象
- */
+
 data class ParamAnalysisResult(
-    val location: ParamLocation, // 参数位置
-    val name: String,            // 参数名 (key)
+    val location: ParamLocation,
+    val name: String,
     val isRequired: Boolean = true,
     val t: PsiType? = null,
     val defaultValue: String? = null,

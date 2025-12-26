@@ -8,20 +8,16 @@ plugins {
 group = "com.sheldon"
 version = libs.versions.plugin.version.get()
 
-val intellijVersions = arrayOf(
-    mapOf("jdk" to 21, "version" to "2024.1.4", "since" to "241"),
-    mapOf("jdk" to 17, "version" to "2023.1.3", "since" to "231"),
-    mapOf("jdk" to 11, "version" to "2021.2.1", "since" to "212")
-)
+//val targetIdeaVersion = "2022.3.3"
+val targetIdeaVersion = if (project.hasProperty("targetIde")) "2024.1.4" else "2022.3.3"
+val targetSinceBuild = "223"
 
-val javaVersion = JavaVersion.current().majorVersion.toInt()
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
-val (targetIdeaVersion, targetSinceBuild) = intellijVersions
-    .firstOrNull { javaVersion >= (it["jdk"] as Int) }
-    ?.let { it["version"].toString() to it["since"].toString() }
-    ?: ("2021.2.1" to "212")
-
-println("当前 JDK: $javaVersion, 将构建 IDEA 版本: $targetIdeaVersion (Since: $targetSinceBuild)")
+println("构建目标 IDEA 版本: $targetIdeaVersion (Since: $targetSinceBuild), JVM Target: 17")
 
 dependencies {
     implementation(project(":common-api"))
@@ -50,20 +46,40 @@ tasks {
     patchPluginXml {
         sinceBuild.set(targetSinceBuild)
         untilBuild.set("")
-        pluginDescription.set("AsyncTest Caller Plugin")
-        changeNotes.set("No updates yet")
     }
 
     runIde {
-        args = listOf("/Users/sheldon/Documents/AsyncTest/other_module/spring-boot-demo")
+        args = listOf("/Users/sheldon/Documents/GitLabProject/order/gree-business-order-admin")
         jvmArgs = listOf("-Didea.is.internal=true", "-Dgradle.version.support.matrix.url=file:///dev/null")
     }
+
     instrumentCode {
         enabled = false
     }
     buildSearchableOptions { enabled = false }
+    runPluginVerifier {
+        ideVersions.set(
+            listOf(
+                "2022.3.3",
+                "2023.1.5",
+                "2024.1.4"
+            )
+        )
+        failureLevel.set(
+            listOf(
+                // 1. 拦截兼容性错误
+                org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel.COMPATIBILITY_PROBLEMS,
+                // 2. 拦截依赖缺失
+                org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES,
+                // 3. 拦截无效插件（比如 plugin.xml 格式错误）
+                org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel.INVALID_PLUGIN
+            )
+        )
+    }
 }
+
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     freeCompilerArgs.set(listOf("-Xwhen-guards"))
 }

@@ -12,7 +12,10 @@ data class ApiRequest(
     var formData: AsyncTestFormData = AsyncTestFormData(),
     var urlencoded: MutableList<AsyncTestVariableNode> = mutableListOf(),
     var json: MutableList<AsyncTestVariableNode> = mutableListOf(),
-    var hash: String = ""
+    var hash: String = "",
+    var name: String = "",
+    var alias: String = "",
+    var desc: String = ""
 )
 
 data class ApiMockRequest(
@@ -22,7 +25,10 @@ data class ApiMockRequest(
     var query: String? = "",
     var bodyType: String? = "none",
     var body: String = "",
-    var prefix: String = ""
+    var formData: String = "",
+    var prefix: String = "",
+    var responseBody: String = "",
+    var responseHeaders: String? = "",
 )
 
 

@@ -3,7 +3,6 @@ package com.sheldon.idea.plugin.api.utils.build
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.utils.RouteKey
 import com.sheldon.idea.plugin.api.utils.RouteRegistry
@@ -34,27 +33,28 @@ class BuildControllerNode(
             }
         }
         if (classNode.children.isEmpty()) return null
-        classNode.classRequest = null
+//        classNode.classRequest = null
         return classNode
     }
 
-    fun buildMethod(psiClass: PsiClass, pathPrefix: String, routeRegistry: RouteRegistry): ApiNode? {
+    fun buildMethod(psiClass: PsiClass, pathPrefix: String, routeRegistry: RouteRegistry, onResult: (ApiNode) -> Unit) {
         val classHelper = ClassHelper(module, project, psiClass)
         val classNode = makeClassNode(classHelper, psiClass, pathPrefix)
-        var newMethodNode: ApiNode? = null
         BuildMethodNode(module, project).build(
             classHelper,
             psiClass,
             classNode.tree_path,
             classNode
         ) { methodNode: ApiNode ->
-            newMethodNode = routeRegistry.getApiNode(
+            val newMethodNode = routeRegistry.getApiNode(
                 module.name,
-                RouteKey(methodNode.method ?: "", methodNode.path ?: ""),
+                RouteKey(method = methodNode.method ?: "", fullUrl = methodNode.path ?: ""),
                 psiClass
             )
-            newMethodNode?.let { it.tree_path = "$pathPrefix.${it.name}[3]" }
+            newMethodNode?.let {
+                it.tree_path = "$pathPrefix.${it.name}[3]"
+                onResult(it)
+            }
         }
-        return newMethodNode
     }
 }

@@ -5,7 +5,6 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiUtil
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
-
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.TypeUtils
@@ -47,8 +46,6 @@ class SpringQueryResolver : RequestPartResolver {
                     if (field.hasModifierProperty(PsiModifier.STATIC) || field.hasModifierProperty(PsiModifier.TRANSIENT)) {
                         continue
                     }
-
-                    // 4. Spring/内部注解过滤 (关键修复)
                     if (field.hasAnnotation(SpringClassName.SPRING_ANN_AUTOWIRED) || field.hasAnnotation(SpringClassName.JAVAX_ANN_RESOURCE) || field.hasAnnotation(
                             SpringClassName.JAKARTA_ANN_RESOURCE
                         ) || field.hasAnnotation(SpringClassName.SPRING_ANN_VALUE)

@@ -11,7 +11,6 @@ import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 
 class HttpEntityResolver : MethodParameterResolver {
-
     override fun resolve(parameter: PsiParameter, method: PsiMethod, psiClass: PsiClass): ParamAnalysisResult? {
         val type = parameter.type
         if (ResolverHelper.isInheritor(type, SpringClassName.HTTP_ENTITY) || ResolverHelper.isInheritor(
@@ -19,8 +18,6 @@ class HttpEntityResolver : MethodParameterResolver {
                 SpringClassName.REQUEST_ENTITY
             )
         ) {
-            // 核心逻辑：提取泛型 T
-            // HttpEntity<UserDto> -> 提取出 UserDto
             var bodyType: PsiType? = null
             if (type is PsiClassType) {
                 val parameters = type.parameters
@@ -31,10 +28,8 @@ class HttpEntityResolver : MethodParameterResolver {
             if (bodyType == null) {
                 return null
             }
-
-
             return ParamAnalysisResult(
-                location = ParamLocation.BODY, // 视为 JSON Body
+                location = ParamLocation.BODY,
                 name = "",
                 t = bodyType,
                 isRequired = true

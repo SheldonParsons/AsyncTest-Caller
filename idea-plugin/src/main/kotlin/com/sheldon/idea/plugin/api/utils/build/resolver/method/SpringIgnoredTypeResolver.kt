@@ -5,7 +5,6 @@ import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 
 object SpringIgnoredTypeResolver {
-
     /**
      * 判断参数是否应该被忽略
      * @return true 表示是上下文参数，不需要展示在 API 文档中
@@ -22,13 +21,11 @@ object SpringIgnoredTypeResolver {
             }
             return true
         }
-
         for (ignoreClass in SpringClassName.IGNORED_PARAM_TYPES) {
             if (ResolverHelper.isInheritor(type, ignoreClass)) {
                 return true
             }
         }
-
         return false
     }
 }

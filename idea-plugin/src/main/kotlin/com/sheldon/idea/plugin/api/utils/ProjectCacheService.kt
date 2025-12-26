@@ -10,24 +10,16 @@ import java.nio.file.Paths
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 
-/**
- * 项目级缓存服务
- * 负责数据的序列化、反序列化、默认值处理
- */
 @Service(Service.Level.PROJECT)
 @State(
     name = "AsyncTestCallerCache",
     storages = [Storage("async_test_force_dump.xml", roamingType = RoamingType.DISABLED)]
 )
 class ProjectCacheService(val project: Project) : PersistentStateComponent<CacheState> {
-
     private var state = CacheState()
-
     private val CURRENT_VERSION = 1
-
     override fun loadState(loadedState: CacheState) {
         if (loadedState.version < CURRENT_VERSION) {
-            // 版本升级，丢弃旧数据，使用新的默认值
             this.state = CacheState().apply { version = CURRENT_VERSION }
         } else {
             XmlSerializerUtil.copyBean(loadedState, this.state)
@@ -76,7 +68,6 @@ class ProjectCacheService(val project: Project) : PersistentStateComponent<Cache
         state.moduleSettingMap.getOrPut(projectName) { arrayListOf() }.clear()
     }
 
-
     fun getModuleTree(moduleName: String): ApiNode? {
         return state.moduleTreeMap[moduleName]
     }
@@ -87,9 +78,7 @@ class ProjectCacheService(val project: Project) : PersistentStateComponent<Cache
 
     fun saveModuleTree(moduleName: String, tree: ApiNode) {
         state.moduleTreeMap[moduleName] = tree
-//        forceWriteToDisk()
     }
-
 
     fun getModuleDirAlias(moduleName: String): DirAliasMapping? {
         return state.moduleDirAliasMap.get(moduleName)
@@ -112,7 +101,6 @@ class ProjectCacheService(val project: Project) : PersistentStateComponent<Cache
     fun saveModuleRequests(moduleName: String, mapping: ModuleRequestMapping) {
         state.moduleRequestMap[moduleName] = mapping
     }
-
 
     fun getRequest(moduleName: String, key: String): ApiRequest? {
         val requestMapping = getModuleRequests(moduleName) ?: return null
@@ -245,48 +233,10 @@ class ProjectCacheService(val project: Project) : PersistentStateComponent<Cache
         state.moduleDataStructureMap.clear()
     }
 
-    private fun forceWriteToDisk() {
-        try {
-            // 1. 获取准确的 .idea 路径
-            // project.projectFile 指向 .idea/misc.xml 或 project.ipr
-            // 我们取它的父目录，通常就是 .idea 文件夹
-            val dotIdea = project.projectFile?.parent?.path
-
-            if (dotIdea == null) {
-                println(">>> ❌ [核弹写入] 无法获取 .idea 路径！")
-                return
-            }
-
-            // 2. 构造目标文件路径
-            // 注意：这里手动指定文件名，绕过 Storage 注解
-            val targetPath = Paths.get(dotIdea, "async_test_force_dump.xml")
-
-            // 3. 序列化 (利用你现有的注解配置)
-            // 这一步会把 myState 变成 XML Element
-            val element = XmlSerializer.serialize(state)
-
-            if (element == null) {
-                println(">>> ❌ [核弹写入] 序列化结果为 null")
-                return
-            }
-
-            // 4. 确保目录存在
-            if (!targetPath.parent.exists()) {
-                targetPath.parent.createDirectories()
-            }
-
-            // 5. 写入文件
-            JDOMUtil.write(element, targetPath, "\n")
-
-            println(">>> 🚀 [核弹写入成功] 文件已生成于: $targetPath")
-
-        } catch (e: Exception) {
-            println(">>> ❌ [核弹写入炸了]")
-            e.printStackTrace()
-        }
-    }
 
     companion object {
-        fun getInstance(project: Project): ProjectCacheService = project.service()
+        fun getInstance(project: Project): ProjectCacheService {
+            return project.getService(ProjectCacheService::class.java)
+        }
     }
 }

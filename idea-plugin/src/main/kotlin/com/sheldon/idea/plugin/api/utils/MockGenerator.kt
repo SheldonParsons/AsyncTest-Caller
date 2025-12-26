@@ -10,9 +10,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 class MockGenerator(val module: Module) {
-
     private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
-
     fun generate(
         request: ApiRequest, prefix: String, dsResolver: (String) -> AsyncTestVariableNode? = { key ->
             val cacheService = ProjectCacheService.getInstance(project = module.project)
@@ -25,17 +23,16 @@ class MockGenerator(val module: Module) {
             headers = buildHeaders(request.headers),
             query = buildQueryJson(request.query),
             bodyType = request.bodyType,
-            body = buildBody(request, dsResolver),
+            body = if (request.bodyType == AsyncTestBodyType.JSON) buildBody(request, dsResolver) else "",
+            formData = if (request.bodyType == AsyncTestBodyType.FORM_DATA) buildBody(request, dsResolver) else "",
             prefix = prefix
         )
     }
-
 
     private fun buildHeaders(headers: List<AsyncTestVariableNode>): String {
         val headerMap = mutableMapOf<String, String>()
         headers.forEach { node ->
             if (node.name.isNotEmpty()) {
-
                 headerMap[node.name] = node.defaultValue
             }
         }
@@ -52,23 +49,19 @@ class MockGenerator(val module: Module) {
         return if (map.isEmpty()) "" else gson.toJson(map)
     }
 
-
     private fun buildBody(request: ApiRequest, dsResolver: (String) -> AsyncTestVariableNode?): String {
         return when (request.bodyType) {
             AsyncTestBodyType.JSON -> {
-
                 val rootNode = request.json.firstOrNull() ?: return ""
                 val jsonObject = parseNodeValue(rootNode, dsResolver, depth = 0)
                 gson.toJson(jsonObject)
             }
 
             AsyncTestBodyType.FORM_DATA -> {
-
                 val formDataMap = mutableMapOf<String, Any>()
                 request.formData.data.forEach { node ->
                     if (node.name.isNotEmpty()) {
                         if (node.type == "files") {
-
                             formDataMap[node.name] = "[FILE]${node.defaultValue}"
                         } else {
                             formDataMap[node.name] = node.defaultValue
@@ -79,11 +72,9 @@ class MockGenerator(val module: Module) {
             }
 
             AsyncTestBodyType.NONE -> ""
-
             else -> ""
         }
     }
-
 
     private fun parseNodeValue(
         originalNode: AsyncTestVariableNode,
@@ -96,22 +87,17 @@ class MockGenerator(val module: Module) {
             && workingNode.children.isEmpty()
             && !workingNode.dsTarget.isNullOrEmpty()
         ) {
-
             val resolvedNode = dsResolver(workingNode.dsTarget!!)
             if (resolvedNode != null) {
-
-
                 workingNode = resolvedNode
             }
         }
-
         return when (workingNode.type) {
             "string" -> workingNode.defaultValue
             "integer" -> workingNode.defaultValue.toIntOrNull() ?: 0
             "number" -> workingNode.defaultValue.toDoubleOrNull() ?: 0.0
             "boolean" -> workingNode.defaultValue.toBoolean()
             "null" -> null
-
             "ds", "object" -> {
                 val map = mutableMapOf<String, Any?>()
                 workingNode.children.forEach { child ->
@@ -125,13 +111,10 @@ class MockGenerator(val module: Module) {
             "array" -> {
                 val list = mutableListOf<Any?>()
                 if (workingNode.children.isNotEmpty()) {
-
                     workingNode.children.forEach { child ->
                         list.add(parseNodeValue(child, dsResolver, depth + 1))
                     }
                 } else if (!workingNode.dsTarget.isNullOrEmpty()) {
-
-
                     val itemTemplate = dsResolver(workingNode.dsTarget!!)
                     if (itemTemplate != null) {
                         list.add(parseNodeValue(itemTemplate, dsResolver, depth + 1))

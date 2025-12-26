@@ -7,7 +7,6 @@ import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.method.AsyncTestBodyType
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
-
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.model.AsyncTestFormData
 import com.sheldon.idea.plugin.api.service.SpringClassName
@@ -18,20 +17,25 @@ import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter.SimpleTypeResolver
 
 class SpringFormDataResolver : RequestPartResolver {
-
     override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
-        // 获取boundary
         val boundary = CommonUtils.getBoundaryString()
         if (variable.t !== null) {
             val formDataList = buildTree(variable.t, variable)
             if (!formDataList.isNullOrEmpty()) {
                 apiRequest.formData = AsyncTestFormData(boundary, formDataList)
                 apiRequest.bodyType = AsyncTestBodyType.FORM_DATA
+                ResolverHelper.addOrUpdateElement(
+                    apiRequest.headers,
+                    AsyncTestVariableNode(
+                        type = "string",
+                        name = SpringClassName.CONTENT_TYPE,
+                        defaultValue = SpringClassName.MULTIPART_FORM_DATA
+                    )
+                )
             }
         }
         return apiRequest
     }
-
 
     fun buildTree(
         psiType: PsiType, variable: ParamAnalysisResult
@@ -54,8 +58,6 @@ class SpringFormDataResolver : RequestPartResolver {
                     if (field.hasModifierProperty(PsiModifier.STATIC) || field.hasModifierProperty(PsiModifier.TRANSIENT)) {
                         continue
                     }
-
-                    // 4. Spring/内部注解过滤 (关键修复)
                     if (field.hasAnnotation(SpringClassName.SPRING_ANN_AUTOWIRED) || field.hasAnnotation(SpringClassName.JAVAX_ANN_RESOURCE) || field.hasAnnotation(
                             SpringClassName.JAKARTA_ANN_RESOURCE
                         ) || field.hasAnnotation(SpringClassName.SPRING_ANN_VALUE)
@@ -96,9 +98,7 @@ class SpringFormDataResolver : RequestPartResolver {
             )
         ) {
             val textNode = AsyncTestVariableNode(
-                type = typeStr,
-                name = variable.name,
-                contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
+                type = typeStr, name = variable.name, contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
             )
             formDataList.add(textNode)
         } else if (typeStr == AsyncTestType.ARRAY) {

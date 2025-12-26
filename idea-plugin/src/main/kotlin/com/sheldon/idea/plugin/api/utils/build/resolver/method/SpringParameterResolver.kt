@@ -6,13 +6,11 @@ import com.intellij.psi.PsiParameter
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 
 class SpringParameterResolver {
-
     /**
      * 解析方法的所有入参
      */
     fun resolve(method: PsiMethod, psiClass: PsiClass): List<ParamAnalysisResult> {
         val results = mutableListOf<ParamAnalysisResult>()
-
         for (parameter in method.parameterList.parameters) {
             if (SpringIgnoredTypeResolver.isIgnored(parameter)) {
                 continue

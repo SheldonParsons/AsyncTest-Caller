@@ -6,6 +6,7 @@ import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
 import com.intellij.openapi.module.Module
@@ -23,6 +24,7 @@ import com.sheldon.idea.plugin.api.front.dashboard.renderer.ApiTreeCellRenderer
 import com.sheldon.idea.plugin.api.front.dashboard.utils.DependencyCollector
 import com.sheldon.idea.plugin.api.front.dashboard.utils.toTreeNode
 import com.sheldon.idea.plugin.api.method.ValidType
+import com.sheldon.idea.plugin.api.model.ApiMockRequest
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.model.AstResponse
 import com.sheldon.idea.plugin.api.model.AsyncTestDataResponse
@@ -49,23 +51,21 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
+typealias OnApiSelectListener = (ApiMockRequest) -> Unit
 
+class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
     private val tree: Tree
     private val treeModel: DefaultTreeModel
 
+    var onNodeSelected: OnApiSelectListener? = null
+
     init {
-        // 1. 初始化一个空的 Root 节点
         val root = DefaultMutableTreeNode("Loading...")
         treeModel = DefaultTreeModel(root)
-
-        // 2. 创建 IDEA 风格的 Tree
         tree = Tree(treeModel).apply {
-            isRootVisible = true // 通常隐藏最顶层的虚拟 Root
-            cellRenderer = ApiTreeCellRenderer() // 挂载我们在第二步写的渲染器
+            isRootVisible = true
+            cellRenderer = ApiTreeCellRenderer()
         }
-
-        // 3. 【核心修改】添加鼠标监听器处理右键菜单
         tree.addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
                 handleContextMenu(e)
@@ -76,23 +76,54 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
             }
 
             override fun mouseClicked(e: MouseEvent) {
-                // 左键 + 双击
                 if (e.clickCount == 2 && e.button == MouseEvent.BUTTON1) {
                     handleDoubleClick(e)
+                } else if (e.clickCount == 1 && e.button == MouseEvent.BUTTON1) {
+                    handleSingleClick(e)
                 }
             }
         })
-
-        // 4. 设置内容
         setContent(JBScrollPane(tree))
     }
 
-    private fun handleDoubleClick(e: MouseEvent) {
-        // 1. 获取点击的节点
+    private fun handleSingleClick(e: MouseEvent) {
         val path = tree.getPathForLocation(e.x, e.y) ?: return
         val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
         val apiNode = node.userObject as? ApiNode ?: return
 
+        // 使用你提供的后台执行工具，避免阻塞 UI
+        project.context().runBackgroundReadUI(
+            lockKey = "AST_CALLER_GET_MOCK", // 建议定义一个常量
+            backgroundTask = {
+                // 在后台线程执行 PSI 解析和 Mock 获取
+                return@runBackgroundReadUI getMockInfo(apiNode)
+            },
+            uiUpdate = { mockRequest, _ ->
+                // 回到 UI 线程，如果有数据，触发回调
+                if (mockRequest != null) {
+                    onNodeSelected?.invoke(mockRequest)
+                }
+            }
+        )
+    }
+
+    private fun getMockInfo(apiNode: ApiNode): ApiMockRequest? {
+        if (apiNode.code_type == 3) {
+            val resultElementType = PsiPathResolver.resolve(project, apiNode.tree_path)
+            if (resultElementType is PsiElement) {
+                val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
+                if (module != null) {
+                    return ProjectCacheService.getInstance(project).getRequestMock(module.name, apiNode.request!!)
+                }
+            }
+        }
+        return null
+    }
+
+    private fun handleDoubleClick(e: MouseEvent) {
+        val path = tree.getPathForLocation(e.x, e.y) ?: return
+        val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
+        val apiNode = node.userObject as? ApiNode ?: return
         project.context()
             .runBackgroundReadUI(
                 lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
@@ -110,19 +141,10 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
      * 处理右键菜单的核心逻辑
      */
     private fun handleContextMenu(e: MouseEvent) {
-        // 1. 判断是否是触发菜单的事件 (不同操作系统右键触发时机不同，可能是 Pressed 也可能是 Released)
         if (!e.isPopupTrigger) return
-
-        // 2. 获取鼠标点击位置下的 TreePath
         val selPath = tree.getPathForLocation(e.x, e.y) ?: return
-
-        // 3. 【关键】Swing 右键默认不选中，需要手动强制选中该节点，否则用户会觉得点空了
         tree.selectionPath = selPath
-
-        // 4. 获取节点数据
         val targetNode = selPath.lastPathComponent as? DefaultMutableTreeNode ?: return
-
-        // 5. 创建并显示菜单
         createAndShowPopupMenu(e, targetNode)
     }
 
@@ -132,21 +154,15 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
     private fun createAndShowPopupMenu(e: MouseEvent, targetNode: DefaultMutableTreeNode) {
         val actionManager = ActionManager.getInstance()
         val actionGroup = DefaultActionGroup()
-
         val apiNode = targetNode.userObject as ApiNode
-
-        // --- 1. 添加带图标的动作 ---
-        // 参数：文字，描述，图标
         actionGroup.add(object : AnAction("刷新节点", "Refresh current node", AllIcons.Actions.Refresh) {
             override fun actionPerformed(event: AnActionEvent) {
                 tree.isEnabled = false
                 project.context()
                     .runBackgroundReadUI(lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
-                        println("apiNode.treePath:${apiNode.tree_path}")
                         val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)
                         var node: ApiNode? = null
                         val cacheService = ProjectCacheService.getInstance(p)
-                        // TODO:清除节点中的request
                         when (resultElementType) {
                             is Module -> {
                                 scanContext(ScanSession()) { session ->
@@ -193,7 +209,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                         }
                                     }
                                 }
-
                             }
 
                             is PsiClass -> {
@@ -233,13 +248,14 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                                 psiClass,
                                                 oldParentNode
                                             )
-                                        val newNode = BuildControllerNode(module, project).buildMethod(
+                                        BuildControllerNode(module, project).buildMethod(
                                             psiClass, oldParentNode.tree_path, routeRegistry
-                                        ) ?: return@runBackgroundReadUI null
-                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
-                                        if (replaceResult == 1) {
-                                            cacheService.saveModuleTree(module.name, moduleTree)
-                                            node = newNode
+                                        ) { newNode ->
+                                            val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
+                                            if (replaceResult == 1) {
+                                                cacheService.saveModuleTree(module.name, moduleTree)
+                                                node = newNode
+                                            }
                                         }
                                     }
                                 }
@@ -257,14 +273,12 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                     })
             }
         })
-
         actionGroup.add(object : AnAction("上传 AsyncTest", "Upload to AsyncTest", AstCallerIcons.Logo) {
             override fun actionPerformed(event: AnActionEvent) {
                 tree.isEnabled = false
                 val cacheService = ProjectCacheService.getInstance(project)
                 project.context()
                     .runBackgroundReadUI(lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
-                        println("apiNode.treePath:${apiNode.tree_path}")
                         var isModule = false
                         var hasMatch = false
                         var currentBindProject = ModuleSetting()
@@ -334,14 +348,12 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                             )
                             tree.isEnabled = true
                         } else {
-
                             project.context().runBackgroundReadUI(
                                 lockKey = CommonConstant.AST_CALLER_GLOBAL_HTTP_ACTION,
                                 requiresReadAction = false,
                                 backgroundTask = { p ->
                                     val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
                                     val result: CollectNodeData = result as CollectNodeData
-                                    // 2. 序列化并打印
                                     val requestBodyJson = gson.toJson(
                                         AsyncTestSyncTree(
                                             result.apiNode,
@@ -357,7 +369,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     httpExecutor.setHeader("Authorization", result.token)
                                     httpExecutor.setBody(requestBodyJson)
                                     val response = httpExecutor.send()
-                                    println("response:${response}")
                                     try {
                                         val element = JsonParser.parseString(response)
                                         val type = object : TypeToken<AstResponse<AsyncTestDataResponse>>() {}.type
@@ -398,7 +409,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                                 }
                                             }
                                             val requestBodyJson = gson.toJson(updateRequest)
-                                            println("requestBodyJson:${requestBodyJson}")
                                             val httpExecutor = HttpExecutor()
                                             httpExecutor.setMethod("POST")
                                             httpExecutor.setUrl(result.url + AsyncTestConstant.SYNC_TREE_DATA)
@@ -406,12 +416,19 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                             httpExecutor.setHeader("Authorization", result.token)
                                             httpExecutor.setBody(requestBodyJson)
                                             val response = httpExecutor.send()
-                                            return@runBackgroundReadUI ValidType.SUCCESS
+                                            val element = JsonParser.parseString(response)
+                                            val type = object : TypeToken<AstResponse<String>>() {}.type
+                                            val responseObject: AstResponse<String> =
+                                                Gson().fromJson(element, type)
+                                            if (responseObject.result == 0) {
+                                                return@runBackgroundReadUI responseObject.msg
+                                            } else {
+                                                return@runBackgroundReadUI ValidType.SUCCESS
+                                            }
                                         }
                                     } catch (e: Exception) {
                                         return@runBackgroundReadUI ValidType.TO_JSON_FAILED
                                     }
-
                                 },
                                 uiUpdate = { result, p ->
                                     if (result == ValidType.TO_JSON_FAILED) {
@@ -434,19 +451,10 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                             )
                             tree.isEnabled = true
                         }
-
-
                     })
             }
         })
-
-//        actionGroup.addSeparator()
-
-        // --- 4. 【核心】创建并显示 Popup ---
-        // "ApiTreePopup" 是一个 place 标识符，用于很多统计或内部逻辑，随便起个唯一的字符串即可
         val popupMenu = actionManager.createActionPopupMenu("ApiTreePopup", actionGroup)
-
-        // 获取 component 并显示
         val component = popupMenu.component
         component.show(e.component, e.x, e.y)
     }
@@ -479,14 +487,10 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
      * 当你在后台解析完 ApiNode 后，调用这个方法
      */
     fun renderApiTree(rootApiNode: ApiNode) {
-        // 必须在 EDT 线程执行
         val rootTreeNode = rootApiNode.toTreeNode()
         treeModel.setRoot(rootTreeNode)
-        // 默认展开第一层
-        // tree.expandRow(0)
     }
 
-    // 获取当前选中的 ApiNode (用于点击事件)
     fun getSelectedNode(): ApiNode? {
         val path = tree.selectionPath ?: return null
         val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return null
@@ -499,30 +503,15 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
      * @param newApiNode 从后端拿回来的最新 ApiNode 数据
      */
     fun refreshSpecificNode(targetTreeNode: DefaultMutableTreeNode, newApiNode: ApiNode) {
-        // 1. 记录当前节点是否是展开的 (reload 后可能会自动折叠，需要恢复)
         val treePath = TreePath(targetTreeNode.path)
         val isExpanded = tree.isExpanded(treePath)
-
-        // 2. 更新当前节点的数据 (UserObject)
         targetTreeNode.userObject = newApiNode
-
-        // 3. 【核心步骤】重构子节点结构
-        // 先移除旧的子节点
         targetTreeNode.removeAllChildren()
-
-        // 递归将新的 ApiNode 子节点转为 TreeNode 并添加进去
-        // 假设你有一个方法叫 convertApiNodeToTreeNode(apiNode) -> DefaultMutableTreeNode
-        // 或者手动循环：
         newApiNode.children.forEach { childApiNode ->
-            val childTreeNode = childApiNode.toTreeNode() // 使用你之前的扩展方法
+            val childTreeNode = childApiNode.toTreeNode()
             targetTreeNode.add(childTreeNode)
         }
-
-        // 4. 通知 Model 刷新该节点 (只会重绘 targetTreeNode 及其下方)
-        // 这一步非常快，而且不会影响兄弟节点和父节点的展开状态
         treeModel.reload(targetTreeNode)
-
-        // 5. 恢复之前的展开状态
         if (isExpanded) {
             tree.expandPath(treePath)
         }

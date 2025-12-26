@@ -10,13 +10,13 @@ import com.intellij.psi.PsiManager
 import com.sheldon.idea.plugin.api.model.ApiNode
 import kotlin.collections.set
 
-
 class BuildRootTree(private val project: Project) : TreeBuilder() {
     fun build(nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): MutableMap<String, ApiNode> {
         return runReadAction {
             val resultRoots = mutableMapOf<String, ApiNode>()
             val modules = ModuleManager.getInstance(project).modules
             for (module in modules) {
+                println("module:${module}")
                 val moduleNode = buildModule(module, nextBuild)
                 if (moduleNode.children.isNotEmpty()) {
                     resultRoots[module.name] = moduleNode
@@ -30,6 +30,7 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
     fun buildModule(module: Module, nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): ApiNode {
         val moduleNode = makeRootNode(module)
         val baseDir = getBaseDir(module)
+        println("baseDir:${baseDir}")
         if (baseDir != null) {
             nextBuild(baseDir, moduleNode, moduleNode.tree_path, module)
         }
@@ -41,7 +42,7 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
         val contentEntries = ModuleRootManager.getInstance(module).contentEntries.flatMap { it.sourceFolders.asList() }
         for (folder in contentEntries) {
             val url = folder.url
-            if (!url.contains("${module.name}/src/main/java")) continue
+            if (!url.contains("/src/main/java")) continue
             val rootDir = PsiManager.getInstance(project).findDirectory(folder.file ?: continue) ?: continue
             baseDir = findBasePackageDirectory(rootDir)
             if (baseDir != null) {

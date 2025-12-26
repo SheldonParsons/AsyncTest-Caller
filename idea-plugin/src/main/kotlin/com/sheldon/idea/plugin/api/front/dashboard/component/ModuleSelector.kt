@@ -16,11 +16,8 @@ import javax.swing.JList
 class ModuleSelector(val project: Project, val treePanel: ApiTreePanel) : ComboBox<String>() {
 
     init {
-        // 1. 启用 IDEA 原生的渲染风格
-        // 这会让下拉框不再是操作系统的原生样式，而是 IDEA 的扁平化列表，且支持键盘搜索
         isSwingPopup = false
 
-        // 2. 设置渲染器 (加图标、调样式)
         setRenderer(object : SimpleListCellRenderer<String>() {
             override fun customize(
                 list: JList<out String?>,
@@ -29,19 +26,12 @@ class ModuleSelector(val project: Project, val treePanel: ApiTreePanel) : ComboB
                 selected: Boolean,
                 hasFocus: Boolean
             ) {
-                // 处理空值情况
                 if (value.isNullOrEmpty()) {
                     text = "无模块"
                     return
                 }
-
-                // 设置文字
                 text = value
-
-                // 设置图标 (这里用 IDEA 通用的 Module 图标，你也可以根据 value 动态判断)
                 icon = AllIcons.Nodes.Module
-
-                // (可选) 如果你想更高级，可以加一些间隔
                 iconTextGap = 6
             }
 
@@ -49,7 +39,6 @@ class ModuleSelector(val project: Project, val treePanel: ApiTreePanel) : ComboB
 
         isEditable = false
 
-        // 3. 事件监听 (保持你原有的逻辑不变)
         this.addItemListener { e ->
             if (e.stateChange == ItemEvent.SELECTED) {
                 val newValue = e.item as? String ?: return@addItemListener

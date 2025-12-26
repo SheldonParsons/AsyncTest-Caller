@@ -3,14 +3,12 @@ package com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part
 import com.intellij.psi.PsiType
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
-
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 
 class SpringHeadersResolver : RequestPartResolver {
-
     override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
         if (variable.t !== null) {
             val headerList = buildTree(variable.t, variable)

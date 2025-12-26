@@ -1,0 +1,20 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="AsyncTest"
+                    secondary="true"
+                    icon="com.sheldon.idea.plugin.icons.AstCallerIcons.Logo"
+                    anchor="right"
+                    factoryClass="com.sheldon.idea.plugin.api.front.dashboard.ApiDashboardToolWindow"/>
+        <notificationGroup id="AsyncTest Notifications" displayType="BALLOON"/>
+        <projectService serviceImplementation="com.sheldon.idea.plugin.api.utils.ProjectCacheService"/>
+        <applicationConfigurable
+                id="AsyncTest Caller Setting"
+                displayName="AsyncTest Caller"
+                instance="com.sheldon.idea.plugin.api.front.setting.AsyncTestCallerConfigurable"/>
+        <projectConfigurable
+                parentId="AsyncTest Caller Setting"
+                id="com.sheldon.idea.plugin.api.front.setting.childpages.UploadConfigurable"
+                displayName="上传到 AsyncTest"
+                instance="com.sheldon.idea.plugin.api.front.setting.childpages.UploadConfigurable"/>
+    </extensions>
+</idea-plugin>

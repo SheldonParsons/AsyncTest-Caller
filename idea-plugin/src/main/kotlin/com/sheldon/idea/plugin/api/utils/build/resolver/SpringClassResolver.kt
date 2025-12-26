@@ -7,8 +7,9 @@ import com.sheldon.idea.plugin.api.utils.build.resolver.method.SpringMethodAnnot
 
 class SpringClassResolver {
     fun resolveRequestMapping(psiClass: PsiClass): ApiRequest? {
-        val annotation = psiClass.getAnnotation(SpringClassName.REQUEST_MAPPING_ANNOTATION) ?: return null
+        val annotation =
+            AnnotationResolver.findAnnotationInHierarchy(psiClass, SpringClassName.REQUEST_MAPPING_ANNOTATION)
+                ?: return null
         return SpringMethodAnnotationResolver.parseSingleAnnotation(annotation, true)
     }
-
 }

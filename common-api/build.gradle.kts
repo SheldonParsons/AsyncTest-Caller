@@ -37,7 +37,6 @@ intellij {
 }
 
 tasks {
-    // 禁用构建插件文件（因为它只是个依赖库）
     patchPluginXml { enabled = false }
     prepareSandbox { enabled = false }
     buildSearchableOptions { enabled = false }

@@ -7,8 +7,7 @@ import com.intellij.psi.PsiMethod
 import com.sheldon.idea.plugin.api.utils.build.BaseHelper
 
 class ClassHelper(val module: Module, val project: Project, val psiClass: PsiClass) : BaseHelper() {
-
     fun getMethods(): Array<PsiMethod> {
-        return psiClass.allMethods
+        return psiClass.methods
     }
 }

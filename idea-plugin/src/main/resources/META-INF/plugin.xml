@@ -4,38 +4,120 @@
     <version>1.0.0.212.0</version>
     <vendor email="leesheldonparsons@gmail.com" url="https://github.com/SheldonParsons">Sheldon</vendor>
 
-    <description>Observe web request and calling asynctest platform for marking.</description>
+    <description>
+        <![CDATA[
+        <h2>AsyncTest Caller</h2>
+        <p>
+            <strong>AsyncTest Caller</strong>
+            is an IntelliJ IDEA plugin designed to scan
+            <strong>Spring Web projects</strong>
+            and automatically extract API endpoint information.
+        </p>
+        <p>
+            The plugin analyzes Spring MVC / Spring Boot controllers, collects structured
+            interface metadata (such as paths, HTTP methods, and related models), and
+            synchronizes this data to the <strong>AsyncTest platform</strong> in a
+            well-organized, structured format.
+        </p>
+        <p>
+            By automating API discovery and synchronization, AsyncTest Caller helps keep
+            your AsyncTest interface definitions <strong>consistent, up-to-date, and tightly
+            aligned with your source code</strong>, reducing manual maintenance and
+            integration errors.
+        </p>
+        <h3>Key Features</h3>
+        <ul>
+            <li>🔍 Scan Spring Web / Spring Boot controller interfaces</li>
+            <li>🧩 Build structured API and data model information</li>
+            <li>🔄 Synchronize interface data with the AsyncTest platform</li>
+            <li>⚡ Improve consistency between backend code and test definitions</li>
+        </ul>
+        <p>
+            AsyncTest Caller is ideal for teams that want to <strong>bridge the gap between
+            Spring-based backend services and AsyncTest</strong>, enabling efficient API
+            management and automated test integration.
+        </p>
+        <h3>Compatibility & Supported Versions</h3>
+        <p>
+            AsyncTest Caller is engineered to ensure broad compatibility across the JetBrains ecosystem.
+            It is compiled with <strong>Java 17</strong> compatibility to support older IDE versions while remaining
+            fully functional on the latest releases.
+        </p>
+        <ul>
+            <li>
+                <strong>Minimum Requirement:</strong>
+                IntelliJ IDEA 2021.2.1 (Build <code>212+</code>)
+            </li>
+            <li>
+                <strong>Maximum Requirement:</strong>
+                None (Supports 2022.x, 2023.x, 2024.x, and future releases)
+            </li>
+            <li>
+                <strong>Verified Versions:</strong>
+                The plugin has been verified against:
+                <ul>
+                    <li>IntelliJ IDEA 2022.3</li>
+                    <li>IntelliJ IDEA 2023.1</li>
+                    <li>IntelliJ IDEA 2024.1+</li>
+                </ul>
+            </li>
+        </ul>
+        <p>
+            Whether you are maintaining legacy projects on an older IDE or using the cutting-edge EAP version, AsyncTest
+            Caller has you covered.
+        </p>
+        <p><br/></p>
+<h2>Privacy Policy</h2>
+<p><b>Last Updated:</b> December 23, 2025</p>
+<p>
+    By using the <b>AsyncTest Caller</b> plugin, you verify that you agree to the following terms regarding data collection and usage.
+</p>
+
+<h3>1. Data Collection & Transmission</h3>
+<ul>
+    <li><b>Source Code Scanning:</b> The plugin scans your project files locally to identify API definitions (e.g., Spring Controllers).</li>
+    <li><b>Data Upload:</b> When you explicitly click "Upload" or "Sync", API metadata is transmitted to the AsyncTest server.</li>
+    <li><b>Destination:</b> Data is sent <b>only</b> to the server URL you configured in <i>Settings > Tools > AsyncTest Caller</i>.</li>
+</ul>
+
+<h3>2. User Control</h3>
+<ul>
+    <li>No background uploads occur without your explicit action or configuration.</li>
+    <li>You have full control over the server URL and Access Token.</li>
+</ul>
+
+<h3>3. Data Usage</h3>
+<p>The transmitted data is used solely to generate test cases and sync API definitions on the AsyncTest platform.</p>
+
+<p>For more details, please contact us via our GitHub(https://github.com/SheldonParsons/AsyncTest-Caller) repository.</p>
+        ]]>
+    </description>
 
     <category>Web</category>
 
     <idea-version since-build="212.0"/>
 
-    <change-notes>empty</change-notes>
+    <change-notes>
+        <![CDATA[
+    <h3>v1.0.0 - Initial Release</h3>
+    <p>🎉 First public release of <b>AsyncTest Caller</b>!</p>
+    <p><b>Key Features:</b></p>
+    <ul>
+        <li><b>Spring Boot Integration:</b> Automatically parse <code>@RequestMapping</code>, headers, and params from Java controllers.</li>
+        <li><b>One-Click Generation:</b> Quickly generate async test cases directly from the IDE editor.</li>
+        <li><b>API Dashboard:</b> Dedicated ToolWindow to manage and visualize your API endpoints.</li>
+        <li><b>Seamless Sync:</b> Upload test cases to the AsyncTest platform with configurable settings.</li>
+        <li>Compatible with IntelliJ IDEA 2022.3 and later (Java 17+).</li>
+    </ul>
+    ]]>
+    </change-notes>
 
-    <depends optional="true" config-file="ast-caller-java.xml">com.intellij.modules.java</depends>
-    <depends optional="true">org.jetbrains.idea.maven</depends>
-    <depends optional="true">com.intellij.gradle</depends>
+    <depends optional="true" config-file="java-support.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="maven-support.xml">org.jetbrains.idea.maven</depends>
+    <depends optional="true" config-file="gradle-support.xml">com.intellij.gradle</depends>
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.properties</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
 
 
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="AsyncTest"
-                    secondary="true"
-                    icon="com.sheldon.idea.plugin.icons.AstCallerIcons.Logo"
-                    anchor="right"
-                    factoryClass="com.sheldon.idea.plugin.api.front.dashboard.ApiDashboardToolWindow"/>
-        <notificationGroup id="AsyncTest Notifications" displayType="BALLOON"/>
-        <projectService serviceImplementation="com.sheldon.idea.plugin.api.utils.ProjectCacheService"/>
-        <projectConfigurable
-                id="AsyncTest Caller Setting"
-                displayName="AsyncTest Caller"
-                instance="com.sheldon.idea.plugin.api.front.setting.AsyncTestCallerConfigurable"/>
-        <projectConfigurable
-                parentId="AsyncTest Caller Setting"
-                id="com.sheldon.idea.plugin.api.front.setting.childpages.UploadConfigurable"
-                displayName="上传到 AsyncTest"
-                instance="com.sheldon.idea.plugin.api.front.setting.childpages.UploadConfigurable"/>
-    </extensions>
 </idea-plugin>

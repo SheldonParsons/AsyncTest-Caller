@@ -6,9 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.APP)
 class GlobalObjectStorageService : Disposable {
-
     private val storage = ConcurrentHashMap<String, Any>()
-
     fun <T : Any> save(key: String, node: T) {
         storage[key] = node
     }
@@ -22,7 +20,6 @@ class GlobalObjectStorageService : Disposable {
     }
 
     fun contains(key: String): Boolean = storage.containsKey(key)
-
     fun clear() {
         storage.clear()
     }
@@ -37,28 +34,5 @@ class GlobalObjectStorageService : Disposable {
 
     override fun dispose() {
         storage.clear()
-        println("IDEA is closing, GlobalObjectStorageService disposed.")
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

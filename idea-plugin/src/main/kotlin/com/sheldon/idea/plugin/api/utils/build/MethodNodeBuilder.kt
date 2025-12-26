@@ -20,13 +20,14 @@ import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterBuildRequest
 
 class MethodNodeBuilder(private val project: Project, val session: ScanSession) : TreeBuilder() {
-
     fun scan(): RouteRegistry {
         return runReadAction {
             val routerRegistry = RouteRegistry()
             val modules = ModuleManager.getInstance(project).modules
             for (module in modules) {
+                println("module:${module.name}")
                 val baseDir = BuildRootTree(module.project).getBaseDir(module)
+                println("baseDir:$baseDir")
                 if (baseDir != null) {
                     collectRecursively(baseDir, module, routerRegistry, SpringConfigReader.getSpringBaseUrl(module))
                 }
@@ -83,9 +84,7 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
         routerRegistry: RouteRegistry,
         prefix: String = "http://localhost:8080"
     ) {
-        // 1. 遍历当前目录下的文件
         for (file in currentDir.files) {
-            // 只要 Java 文件
             if (file is PsiJavaFile) {
                 for (psiClass in file.classes) {
                     if (isController(psiClass)) {
@@ -94,7 +93,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
                 }
             }
         }
-        // 2. 递归进入子目录
         for (subDir in currentDir.subdirectories) {
             collectRecursively(subDir, module, routerRegistry, prefix)
         }
@@ -119,9 +117,9 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
     ): Boolean {
         val containingClass = psiMethod.containingClass ?: return false
         val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
-        if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
-            return false
-        }
+//        if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
+//            return false
+//        }
         if (isMappingMethod(psiMethod)) {
             val methodNode = makeMethodNode(
                 methodHelper,

@@ -22,10 +22,9 @@ class BuildMethodNode(
         for (psiMethod in methods) {
             val containingClass = psiMethod.containingClass ?: continue
             val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
-            // 核心过滤逻辑
-            if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
-                continue
-            }
+//            if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
+//                continue
+//            }
             if (isMappingMethod(psiMethod)) {
                 val methodNode =
                     makeMethodExcludeParam(methodHelper, psiMethod, classPath, classNode)

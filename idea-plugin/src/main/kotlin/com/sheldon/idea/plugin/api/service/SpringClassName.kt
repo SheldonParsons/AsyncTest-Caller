@@ -71,6 +71,7 @@ object SpringClassName {
     // --- Headers相关 ---
     const val CONTENT_TYPE = "content-type"
     const val APPLICATION_JSON = "application/json"
+    const val MULTIPART_FORM_DATA = "multipart/form-data"
     const val CONTAINER_HTTP_HEADERS = "org.springframework.http.HttpHeaders"
     const val CONTAINER_JAVA_UTIL_MAP = "java.util.Map"
     const val CONTAINER_MULTI_VALUE_MAP = "org.springframework.util.MultiValueMap"
