@@ -62,9 +62,23 @@ class MockGenerator(val module: Module) {
                 request.formData.data.forEach { node ->
                     if (node.name.isNotEmpty()) {
                         if (node.type == "files") {
-                            formDataMap[node.name] = "[FILE]${node.defaultValue}"
+                            formDataMap[node.name] = object {
+                                val type = "file"
+                                val name = node.name
+                                val contentType = node.contentType
+                                val fileList = ArrayList<String>()
+                                val required = node.required
+                            }
                         } else {
-                            formDataMap[node.name] = node.defaultValue
+                            formDataMap[node.name] = {
+                                formDataMap[node.name] = object {
+                                    val type = "text"
+                                    val name = node.name
+                                    val contentType = node.contentType
+                                    val fileList = ArrayList<String>()
+                                    val required = node.required
+                                }
+                            }
                         }
                     }
                 }

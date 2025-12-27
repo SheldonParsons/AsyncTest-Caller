@@ -114,10 +114,10 @@ class AnnotatedParameterResolver : MethodParameterResolver {
      */
     private fun extractBasicInfo(annotation: PsiAnnotation, parameter: PsiParameter): BasicInfo {
         var name = ResolverHelper.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_VALUE).firstOrNull()
-        if (name == null) {
+        if (name == null || name.isEmpty()) {
             name = ResolverHelper.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_NAME).firstOrNull()
         }
-        if (name == null) {
+        if (name == null || name.isEmpty()) {
             name = parameter.name
         }
         val required = getBooleanAttribute(annotation, SpringClassName.ATTR_REQUIRED, true)

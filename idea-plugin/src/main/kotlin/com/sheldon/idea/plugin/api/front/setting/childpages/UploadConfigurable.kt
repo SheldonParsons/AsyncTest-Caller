@@ -109,8 +109,7 @@ class UploadConfigurable(private val project: Project) : BoundConfigurable("ä¸Šä
                 }
             }
             row {
-                
-                cell(groupUI).align(Align.FILL) 
+                cell(groupUI).align(Align.FILL)
             }.resizableRow()
         }
         mappingPanelHelper!!.tokenProvider = {

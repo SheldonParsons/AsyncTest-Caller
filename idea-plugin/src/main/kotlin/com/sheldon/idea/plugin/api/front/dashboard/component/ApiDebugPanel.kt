@@ -10,7 +10,10 @@ import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.util.ui.JBUI
+import com.sheldon.idea.plugin.api.front.dashboard.component.child.FormDataTablePanel
 import com.sheldon.idea.plugin.api.front.dashboard.component.child.JsonEditorPanel
+import com.sheldon.idea.plugin.api.front.dashboard.component.child.KeyValueTablePanel
 import com.sheldon.idea.plugin.api.model.ApiMockRequest
 import java.awt.BorderLayout
 import java.awt.Component
@@ -26,9 +29,9 @@ class ApiDebugPanel(private val project: Project) : JPanel(BorderLayout()), Disp
 
     // 请求部分的 Tabs
     private val requestTabPane = JBTabbedPane()
-    private val headerArea = JTextArea()
-    private val paramsArea = JTextArea()
-    private val formArea = JTextArea()
+    private val headerArea = KeyValueTablePanel()
+    private val paramsArea = KeyValueTablePanel()
+    private val formArea = FormDataTablePanel(project)
     private val jsonArea = JsonEditorPanel(project, this, "请求Json详情")
 
     // 响应部分的 Tabs
@@ -63,7 +66,7 @@ class ApiDebugPanel(private val project: Project) : JPanel(BorderLayout()), Disp
     // 辅助函数：给 TextArea 加上滚动条
     private fun createScrollArea(textArea: Component): javax.swing.JScrollPane {
         return javax.swing.JScrollPane(textArea).apply {
-            border = javax.swing.BorderFactory.createEmptyBorder()
+            border = JBUI.Borders.empty()
         }
     }
 
@@ -111,9 +114,10 @@ class ApiDebugPanel(private val project: Project) : JPanel(BorderLayout()), Disp
     fun setData(data: ApiMockRequest) {
         urlField.text = "${data.prefix}${data.path}"
         methodComboBox.selectedItem = data.method
-        headerArea.text = data.headers
-        paramsArea.text = data.query
-        formArea.text = data.formData
+        headerArea.setData(data.headers ?: "")
+        paramsArea.setData(data.query ?: "")
+        println("data.formData:${data.formData}")
+//        formArea.setData(data.formData)
         jsonArea.setText(data.body)
 
         // 如果有响应数据也可以回填
@@ -124,17 +128,17 @@ class ApiDebugPanel(private val project: Project) : JPanel(BorderLayout()), Disp
     /**
      * 读取当前 UI 的内容
      */
-    fun getData(): ApiMockRequest {
-        return ApiMockRequest(
-            // TODO:url需要拆解
-            path = urlField.text,
-            method = methodComboBox.selectedItem as String,
-            headers = headerArea.text,
-            query = paramsArea.text,
-            formData = formArea.text,
-            body = jsonArea.getText(),
-            responseBody = respBodyArea.getText(),
-            responseHeaders = respHeaderArea.text
-        )
-    }
+//    fun getData(): ApiMockRequest {
+//        return ApiMockRequest(
+//            // TODO:url需要拆解
+//            path = urlField.text,
+//            method = methodComboBox.selectedItem as String,
+//            headers = headerArea.text,
+//            query = paramsArea.text,
+//            formData = formArea.text,
+//            body = jsonArea.getText(),
+//            responseBody = respBodyArea.getText(),
+//            responseHeaders = respHeaderArea.text
+//        )
+//    }
 }
