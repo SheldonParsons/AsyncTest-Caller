@@ -7,16 +7,6 @@ import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
 import com.intellij.util.xmlb.annotations.XCollection
 
-/**
- * 参数位置枚举：决定了这个参数最终去 ApiRequest 的哪个列表
- */
-enum class ParamLocation {
-    HEADER,
-    QUERY,
-    BODY,
-    FORM_DATA,
-}
-
 
 /**
  * AsyncTest 平台专用的 Schema 节点
@@ -115,4 +105,11 @@ object ValidType {
     const val NO_TOKEN = "no-token"
     const val TO_JSON_FAILED = "to-json-failed"
     const val SUCCESS = "success"
+}
+
+enum class ParamLocation {
+    HEADER,
+    QUERY,
+    BODY,
+    FORM_DATA,
 }

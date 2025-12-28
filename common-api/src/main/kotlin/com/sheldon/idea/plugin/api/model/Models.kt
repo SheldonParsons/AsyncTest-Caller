@@ -79,6 +79,15 @@ data class DataStructure(
     var hash: String = ""
 )
 
+data class FormDataField(
+    var type: String = "file",
+    var name: String = "",
+    var value: String = "",
+    var contentType: String = "",
+    var fileList: ArrayList<String> = ArrayList<String>(),
+    var required: Boolean = false
+)
+
 //data class AstDataStructure
 
 data class AsyncTestFormData(var boundary: String = "", var data: MutableList<AsyncTestVariableNode> = mutableListOf())

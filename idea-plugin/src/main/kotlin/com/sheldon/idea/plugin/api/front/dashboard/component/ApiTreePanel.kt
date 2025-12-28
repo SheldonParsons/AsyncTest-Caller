@@ -12,6 +12,7 @@ import com.intellij.pom.Navigatable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
@@ -30,6 +31,7 @@ import com.sheldon.idea.plugin.api.model.AstResponse
 import com.sheldon.idea.plugin.api.model.AsyncTestDataResponse
 import com.sheldon.idea.plugin.api.model.AsyncTestSyncTree
 import com.sheldon.idea.plugin.api.model.AsyncTestUpdateDataRequest
+import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.model.CollectNodeData
 import com.sheldon.idea.plugin.api.model.ModuleSetting
 import com.sheldon.idea.plugin.api.utils.HttpExecutor
@@ -51,13 +53,15 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-typealias OnApiSelectListener = (ApiMockRequest) -> Unit
+typealias OnApiSelectListener = (ApiMockRequest?, String?) -> Unit
 
 class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
     private val tree: Tree
     private val treeModel: DefaultTreeModel
 
     var onNodeSelected: OnApiSelectListener? = null
+
+    var onCloseMock: (() -> Unit)? = null
 
     init {
         val root = DefaultMutableTreeNode("Loading...")
@@ -94,15 +98,19 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         // 使用你提供的后台执行工具，避免阻塞 UI
         project.context().runBackgroundReadUI(
             lockKey = "AST_CALLER_GET_MOCK", // 建议定义一个常量
-            backgroundTask = {
+            backgroundTask = { p ->
                 // 在后台线程执行 PSI 解析和 Mock 获取
-                return@runBackgroundReadUI getMockInfo(apiNode)
+                val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)
+                var module: String? = null
+                if (resultElementType is PsiMethod) {
+                    module = ModuleUtilCore.findModuleForPsiElement(resultElementType)?.name
+                }
+
+                return@runBackgroundReadUI Pair(getMockInfo(apiNode), module)
             },
             uiUpdate = { mockRequest, _ ->
                 // 回到 UI 线程，如果有数据，触发回调
-                if (mockRequest != null) {
-                    onNodeSelected?.invoke(mockRequest)
-                }
+                onNodeSelected?.invoke(mockRequest.first, mockRequest.second)
             }
         )
     }
@@ -451,6 +459,125 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                             )
                             tree.isEnabled = true
                         }
+                    })
+            }
+        })
+        actionGroup.add(object : AnAction("刷新 Mock", "Refresh current node", AllIcons.Actions.Refresh) {
+            override fun actionPerformed(event: AnActionEvent) {
+                tree.isEnabled = false
+                project.context()
+                    .runBackgroundReadUI(lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
+                        val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)
+                        var node: ApiNode? = null
+                        val cacheService = ProjectCacheService.getInstance(p)
+                        when (resultElementType) {
+                            is Module -> {
+                                scanContext(ScanSession(saveMock = true)) { session ->
+                                    val routeRegistry =
+                                        MethodNodeBuilder(project, session).scanModule(resultElementType)
+                                    val newNode =
+                                        BuildRootTree(project).buildModule(resultElementType) { directory, parentNode, pathPrefix, module ->
+                                            BuildDirectoryTree(module, project).build(
+                                                directory,
+                                                parentNode,
+                                                pathPrefix,
+                                            ) { psiClass, pathPrefix ->
+                                                BuildControllerNode(module, project).build(
+                                                    psiClass, pathPrefix, routeRegistry
+                                                )
+                                            }
+                                        }
+                                    cacheService.saveModuleTree(resultElementType.name, newNode)
+                                    node = newNode
+                                }
+                            }
+
+                            is PsiDirectory -> {
+                                val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
+                                if (module != null) {
+                                    val cacheResult = getCacheDataAndClean(cacheService, module, apiNode)
+                                        ?: return@runBackgroundReadUI null
+                                    val (moduleTree, _, oldParentNode) = cacheResult
+                                    scanContext(ScanSession(saveMock = true)) { session ->
+                                        val routeRegistry =
+                                            MethodNodeBuilder(project, session).scanDir(module, resultElementType)
+                                        val newNode = BuildDirectoryTree(module, project).buildDir(
+                                            resultElementType,
+                                            oldParentNode.tree_path,
+                                        ) { psiClass, pathPrefix ->
+                                            BuildControllerNode(module, project).build(
+                                                psiClass, pathPrefix, routeRegistry
+                                            )
+                                        }
+                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
+                                        if (replaceResult == 1) {
+                                            cacheService.saveModuleTree(module.name, moduleTree)
+                                            node = newNode
+                                        }
+                                    }
+                                }
+                            }
+
+                            is PsiClass -> {
+                                val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
+                                if (module != null) {
+                                    val cacheResult = getCacheDataAndClean(cacheService, module, apiNode)
+                                        ?: return@runBackgroundReadUI null
+                                    val (moduleTree, _, oldParentNode) = cacheResult
+                                    scanContext(ScanSession(saveMock = true)) { session ->
+                                        val routeRegistry =
+                                            MethodNodeBuilder(project, session).scanClass(module, resultElementType)
+                                        val newNode = BuildControllerNode(module, project).build(
+                                            resultElementType, oldParentNode.tree_path, routeRegistry
+                                        ) ?: return@runBackgroundReadUI null
+                                        val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
+                                        if (replaceResult == 1) {
+                                            cacheService.saveModuleTree(module.name, moduleTree)
+                                            node = newNode
+                                        }
+                                    }
+                                }
+                            }
+
+                            is PsiMethod -> {
+                                val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
+                                if (module != null) {
+                                    val cacheResult = getCacheDataAndClean(cacheService, module, apiNode)
+                                        ?: return@runBackgroundReadUI null
+                                    val (moduleTree, _, oldParentNode) = cacheResult
+                                    scanContext(ScanSession(saveMock = true)) { session ->
+                                        val psiClass =
+                                            resultElementType.containingClass ?: return@runBackgroundReadUI null
+                                        val routeRegistry =
+                                            MethodNodeBuilder(project, session).scanMethod(
+                                                module,
+                                                resultElementType,
+                                                psiClass,
+                                                oldParentNode
+                                            )
+                                        BuildControllerNode(module, project).buildMethod(
+                                            psiClass, oldParentNode.tree_path, routeRegistry
+                                        ) { newNode ->
+                                            val replaceResult = moduleTree.replaceNodeByPath(apiNode.tree_path, newNode)
+                                            if (replaceResult == 1) {
+                                                cacheService.saveModuleTree(module.name, moduleTree)
+                                                node = newNode
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        node
+                    }, uiUpdate = { node, p ->
+                        if (node == null) {
+                            Notifier.notifyWarning(p, "AsyncTest Caller", "树结构解析失败，请寻找父级节点进行更新")
+                        } else {
+                            refreshSpecificNode(targetNode, node)
+                            Notifier.notifyInfo(p, "AsyncTest Caller", "刷新成功")
+                            onCloseMock?.invoke()
+                        }
+                        tree.isEnabled = true
                     })
             }
         })

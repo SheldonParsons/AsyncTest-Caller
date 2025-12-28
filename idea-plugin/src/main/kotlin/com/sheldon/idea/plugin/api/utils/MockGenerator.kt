@@ -6,6 +6,7 @@ import com.sheldon.idea.plugin.api.method.AsyncTestBodyType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 import com.sheldon.idea.plugin.api.model.ApiMockRequest
 import com.sheldon.idea.plugin.api.model.ApiRequest
+import com.sheldon.idea.plugin.api.model.FormDataField
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -62,23 +63,23 @@ class MockGenerator(val module: Module) {
                 request.formData.data.forEach { node ->
                     if (node.name.isNotEmpty()) {
                         if (node.type == "files") {
-                            formDataMap[node.name] = object {
-                                val type = "file"
-                                val name = node.name
-                                val contentType = node.contentType
-                                val fileList = ArrayList<String>()
-                                val required = node.required
-                            }
+                            formDataMap[node.name] = FormDataField(
+                                "file",
+                                node.name,
+                                "",
+                                node.contentType,
+                                ArrayList(),
+                                node.required
+                            )
                         } else {
-                            formDataMap[node.name] = {
-                                formDataMap[node.name] = object {
-                                    val type = "text"
-                                    val name = node.name
-                                    val contentType = node.contentType
-                                    val fileList = ArrayList<String>()
-                                    val required = node.required
-                                }
-                            }
+                            formDataMap[node.name] = FormDataField(
+                                "text",
+                                node.name,
+                                "",
+                                node.contentType,
+                                ArrayList(),
+                                node.required
+                            )
                         }
                     }
                 }

@@ -77,11 +77,18 @@ class ApiDashboardToolWindow : ToolWindowFactory {
             splitter.firstComponent = treePanel // 上面是树
             splitter.secondComponent = null // 下面是调试区
 
-            treePanel.onNodeSelected = { mockRequest ->
+            debugPanel.onClose = {
+                splitter.secondComponent = null
+            }
+            treePanel.onCloseMock = {
+                splitter.secondComponent = null
+            }
+
+            treePanel.onNodeSelected = { mockRequest, moduleName ->
                 if (splitter.secondComponent == null) {
                     splitter.secondComponent = debugPanel
                 }
-                debugPanel.setData(mockRequest)
+                debugPanel.setData(mockRequest,moduleName)
             }
 
             // 3. 组合最终面板
