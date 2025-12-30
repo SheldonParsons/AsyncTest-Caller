@@ -24,7 +24,8 @@ data class ApiNode(
     @Transient
     var classRequest: ApiRequest? = null,
     var path: String? = null,
-    var hash: String = ""
+    var hash: String = "",
+    var docs: Any? = null
 ) {
     fun addChild(node: ApiNode) {
         children.add(node)

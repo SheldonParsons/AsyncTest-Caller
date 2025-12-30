@@ -5,9 +5,16 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiUtil
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 
 interface RequestPartResolver {
-    fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest
+    fun push(
+        variable: ParamAnalysisResult,
+        apiRequest: ApiRequest,
+        implicitParams: MutableMap<String, DocInfo> = mutableMapOf(),
+        hasDocs: Boolean = false
+    ): ApiRequest
+
     fun extractMapValueType(type: PsiType): PsiType? {
         val resolveResult = PsiUtil.resolveGenericsClassInType(type)
         val psiClass = resolveResult.element ?: return null
@@ -28,5 +35,14 @@ interface RequestPartResolver {
         val resolveResult = PsiUtil.resolveGenericsClassInType(type)
         resolveResult.element ?: return null
         return resolveResult.substitutor.substitutionMap.values.firstOrNull()
+    }
+
+    fun getImplicitParamDesc(implicitParams: MutableMap<String, DocInfo>, paramName: String): String? {
+        implicitParams.get(paramName)?.let { implicitParam ->
+            if (implicitParam.apiImplicitParamInfo.value.isNotEmpty()) {
+                return implicitParam.apiImplicitParamInfo.value
+            }
+        }
+        return null
     }
 }

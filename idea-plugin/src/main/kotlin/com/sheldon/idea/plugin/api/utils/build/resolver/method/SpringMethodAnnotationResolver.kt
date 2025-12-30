@@ -52,11 +52,11 @@ class SpringMethodAnnotationResolver {
             if (!ignoreMethod) {
                 method = ResolverHelper.parseRequestMethod(annotation)?.name
             }
-            val path = ResolverHelper.getPath(annotation)
-            val headers = ResolverHelper.parseParamsOrHeaders(annotation, SpringClassName.ATTR_HEADERS) { k, v ->
+            val path = AnnotationResolver.getPath(annotation)
+            val headers = AnnotationResolver.parseParamsOrHeaders(annotation, SpringClassName.ATTR_HEADERS) { k, v ->
                 AsyncTestVariableNode(type = "string", name = k.lowercase(), defaultValue = v)
             }
-            ResolverHelper.parseConsumes(annotation, SpringClassName.ATTR_CONSUMES) { value ->
+            AnnotationResolver.parseConsumes(annotation, SpringClassName.ATTR_CONSUMES) { value ->
                 val contentTypeKey = SpringClassName.CONTENT_TYPE.lowercase()
                 headers.removeIf { it.name == contentTypeKey }
                 headers.add(
@@ -65,7 +65,7 @@ class SpringMethodAnnotationResolver {
                     )
                 )
             }
-            val params = ResolverHelper.parseParamsOrHeaders(annotation, SpringClassName.ATTR_PARAMS) { k, v ->
+            val params = AnnotationResolver.parseParamsOrHeaders(annotation, SpringClassName.ATTR_PARAMS) { k, v ->
                 AsyncTestVariableNode(type = "string", name = k.lowercase(), defaultValue = v)
             }
             return ApiRequest(

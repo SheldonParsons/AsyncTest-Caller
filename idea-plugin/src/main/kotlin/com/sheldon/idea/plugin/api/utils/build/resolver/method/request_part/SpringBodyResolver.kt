@@ -11,28 +11,41 @@ import com.sheldon.idea.plugin.api.method.AsyncTestBodyType
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 import com.sheldon.idea.plugin.api.model.ApiRequest
+import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.model.DataStructure
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
+import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterNode
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.calculateSafeHash
 
 class SpringBodyResolver(val module: Module) :
     RequestPartResolver {
-    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
+    private var privateHasDoc: Boolean = false
+    private var paramDoc: DocInfo? = null
+    override fun push(
+        variable: ParamAnalysisResult,
+        apiRequest: ApiRequest,
+        implicitParams: MutableMap<String, DocInfo>,
+        hasDocs: Boolean
+    ): ApiRequest {
         /**
          * 1、获取持久化缓存信息
          * 2、将创建的dto对象更新进去ProjectCacheService.saveOrUpdateSingleRequest
          * 3、将dto加入到ProjectCacheService.addReferToDsPool
          * */
+        privateHasDoc = hasDocs
         if (apiRequest.json.isNotEmpty()) {
             return apiRequest
         }
         if (variable.t !== null) {
             val currentSessionIds = mutableSetOf<String>()
-            val rootNode = buildTree(variable.t, "root", currentSessionIds, isRoot = true)
+            paramDoc = variable.docInfo
+            val rootNode =
+                buildTree(variable.t, "root", currentSessionIds, isRoot = true, implicitParams = implicitParams)
             if (rootNode != null && rootNode.type in listOf(
                     AsyncTestType.ARRAY, AsyncTestType.DS, AsyncTestType.OBJECT
                 )
@@ -58,14 +71,21 @@ class SpringBodyResolver(val module: Module) :
         sessionIds: MutableSet<String>,
         depth: Int = 0,
         isRoot: Boolean = false,
-        originElement: PsiElement? = null
+        originElement: PsiElement? = null,
+        implicitParams: MutableMap<String, DocInfo> = mutableMapOf()
     ): AsyncTestVariableNode? {
         if (TypeUtils.isGeneralObject(psiType)) return null
         val typeStr = TypeUtils.mapToAsyncType(psiType)
         if (typeStr == AsyncTestType.FILES) return null
         val node = AsyncTestVariableNode(type = typeStr, name = name)
         if (originElement != null) {
-            val fieldComment = ResolverHelper.getElementComment(originElement)
+            val (docInfo, _) = DocResolver().resolve(
+                originElement,
+                mutableMapOf(),
+                CodeType.POJO_FIELD,
+                hasDocs = privateHasDoc
+            )
+            val fieldComment = docInfo.title
             if (fieldComment.isNotEmpty()) {
                 node.statement = fieldComment
             }
@@ -77,13 +97,28 @@ class SpringBodyResolver(val module: Module) :
             node.contentType = psiType.presentableText
             val dsTargetId = node.dsTarget ?: ""
             if (node.statement.isEmpty()) {
-                val classComment = ResolverHelper.getElementComment(psiClass)
+                val (docInfo, _) = DocResolver().resolve(
+                    psiClass,
+                    mutableMapOf(),
+                    CodeType.POJO_CLASS,
+                    hasDocs = privateHasDoc
+                )
+                val classComment = docInfo.title
                 if (classComment.isNotEmpty()) {
                     node.statement = classComment
                 }
             }
             if (isRoot) {
                 node.name = psiType.presentableText
+                val paramDesc = getImplicitParamDesc(implicitParams, name)
+                if (paramDesc != null) {
+                    node.statement = paramDesc
+                }
+                paramDoc?.let {
+                    if (it.title.isNotEmpty()) {
+                        node.statement = it.title
+                    }
+                }
                 sessionIds.add(dsTargetId)
                 parsePojoFields(psiClass, resolveResult.substitutor, node, sessionIds)
                 val ds = DataStructure(
@@ -144,7 +179,13 @@ class SpringBodyResolver(val module: Module) :
             name = psiType.presentableText,
             dsTarget = dsTargetId
         )
-        val classComment = ResolverHelper.getElementComment(psiClass)
+        val (docInfo, _) = DocResolver().resolve(
+            psiClass,
+            mutableMapOf(),
+            CodeType.POJO_CLASS,
+            hasDocs = privateHasDoc
+        )
+        val classComment = docInfo.title
         if (classComment.isNotEmpty()) {
             definitionNode.statement = classComment
         }

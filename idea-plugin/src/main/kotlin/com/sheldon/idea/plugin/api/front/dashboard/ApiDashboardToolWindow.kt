@@ -2,6 +2,8 @@ package com.sheldon.idea.plugin.api.front.dashboard
 
 import com.google.gson.GsonBuilder
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -16,25 +18,20 @@ import com.sheldon.idea.plugin.api.front.dashboard.component.ApiTreePanel
 import com.sheldon.idea.plugin.api.front.dashboard.component.ModuleSelector
 import com.sheldon.idea.plugin.api.front.dashboard.utils.TreeAction
 import com.sheldon.idea.plugin.api.model.ApiMockRequest
+import com.sheldon.idea.plugin.api.utils.Notifier
 import java.awt.BorderLayout
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class ApiDashboardToolWindow : ToolWindowFactory {
+class ApiDashboardToolWindow : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val dashboardPanel = ApiDashboardPanel(project)
         val contentFactory = ContentFactory.getInstance()
         val content = contentFactory.createContent(dashboardPanel.getContent(), "接口", true)
         toolWindow.contentManager.addContent(content)
-        TreeAction.reloadTree(project) { treeMap, _ ->
-//            val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
-//            val jsonString = gson.toJson(treeMap)
-//            println("jsonString: $jsonString")
-            val rootNode = treeMap.first().value
-            dashboardPanel.moduleSelector.updateDropdown(treeMap.keys)
-            dashboardPanel.moduleSelector.isEditable = true
-            dashboardPanel.treePanel.renderApiTree(rootNode)
+        DumbService.getInstance(project).runWhenSmart {
+            dashboardPanel.loadData(isForceRefresh = false)
         }
     }
 
@@ -42,24 +39,14 @@ class ApiDashboardToolWindow : ToolWindowFactory {
         val treePanel = ApiTreePanel(project)
         val moduleSelector = ModuleSelector(project, treePanel)
         val debugPanel = ApiDebugPanel(project)
+        private var refreshButton: JButton? = null
         fun getContent(): JComponent {
-            // 1. 顶部工具栏 (保持原有的 layout 逻辑)
             val topBar = panel {
                 row {
-                    button("") { event ->
-                        val btn = event.source as JButton
-                        btn.icon = AnimatedIcon.Default()
-                        btn.isEnabled = false
-                        TreeAction.reloadTree(project, force = true) { treeMap, _ ->
-                            if (treeMap.isNotEmpty()) {
-                                val rootNode = treeMap.first().value
-                                treePanel.renderApiTree(rootNode)
-                                moduleSelector.updateDropdown(treeMap.keys)
-                            }
-                            btn.icon = AllIcons.Actions.Refresh
-                            btn.isEnabled = true
-                        }
+                    button("") {
+                        loadData(isForceRefresh = true)
                     }.applyToComponent {
+                        refreshButton = this
                         icon = AllIcons.Actions.Refresh
                         toolTipText = "刷新所有服务"
                         isContentAreaFilled = false
@@ -67,15 +54,12 @@ class ApiDashboardToolWindow : ToolWindowFactory {
                     cell(moduleSelector).align(Align.FILL)
                 }
             }.apply {
-                // 给顶部留一点边距
                 border = javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)
             }
 
-            // 2. 创建分割面板 (Splitter)
-            // true 表示垂直分割 (上下结构)，0.6f 表示分割比例
             val splitter = JBSplitter(true, 0.6f)
-            splitter.firstComponent = treePanel // 上面是树
-            splitter.secondComponent = null // 下面是调试区
+            splitter.firstComponent = treePanel
+            splitter.secondComponent = null
 
             debugPanel.onClose = {
                 splitter.secondComponent = null
@@ -88,15 +72,47 @@ class ApiDashboardToolWindow : ToolWindowFactory {
                 if (splitter.secondComponent == null) {
                     splitter.secondComponent = debugPanel
                 }
-                debugPanel.setData(mockRequest,moduleName)
+                debugPanel.setData(mockRequest, moduleName)
             }
 
-            // 3. 组合最终面板
             val mainPanel = JPanel(BorderLayout())
             mainPanel.add(topBar, BorderLayout.NORTH)
             mainPanel.add(splitter, BorderLayout.CENTER)
 
             return mainPanel
+        }
+
+        fun loadData(isForceRefresh: Boolean) {
+            if (DumbService.isDumb(project)) {
+                Notifier.notifyWarning(project, content = "索引正在构建中，请稍后刷新")
+                return
+            }
+
+            refreshButton?.let {
+                it.icon = AnimatedIcon.Default()
+                it.isEnabled = false
+            }
+
+            TreeAction.reloadTree(project, force = isForceRefresh) { treeMap, _ ->
+                try {
+                    if (treeMap.isEmpty()) {
+                        Notifier.notifyWarning(project, content = "未扫描到接口，请确认工程结构是否正确")
+                    } else {
+//                        val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+//                        val jsonString = gson.toJson(treeMap)
+//                        println("jsonString: $jsonString")
+                        val rootNode = treeMap.first().value
+                        treePanel.renderApiTree(rootNode)
+                        moduleSelector.updateDropdown(treeMap.keys)
+                        moduleSelector.isEditable = true
+                    }
+                } finally {
+                    refreshButton?.let {
+                        it.icon = AllIcons.Actions.Refresh
+                        it.isEnabled = true
+                    }
+                }
+            }
         }
     }
 }

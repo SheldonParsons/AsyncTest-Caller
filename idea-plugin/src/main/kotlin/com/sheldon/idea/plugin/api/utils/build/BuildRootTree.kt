@@ -16,7 +16,6 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
             val resultRoots = mutableMapOf<String, ApiNode>()
             val modules = ModuleManager.getInstance(project).modules
             for (module in modules) {
-                println("module:${module}")
                 val moduleNode = buildModule(module, nextBuild)
                 if (moduleNode.children.isNotEmpty()) {
                     resultRoots[module.name] = moduleNode
@@ -30,7 +29,6 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
     fun buildModule(module: Module, nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): ApiNode {
         val moduleNode = makeRootNode(module)
         val baseDir = getBaseDir(module)
-        println("baseDir:${baseDir}")
         if (baseDir != null) {
             nextBuild(baseDir, moduleNode, moduleNode.tree_path, module)
         }
@@ -38,19 +36,21 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
     }
 
     fun getBaseDir(module: Module): PsiDirectory? {
-        var baseDir: PsiDirectory? = null
-        val contentEntries = ModuleRootManager.getInstance(module).contentEntries.flatMap { it.sourceFolders.asList() }
-        for (folder in contentEntries) {
-            val url = folder.url
-            if (!url.contains("/src/main/java")) continue
-            val rootDir = PsiManager.getInstance(project).findDirectory(folder.file ?: continue) ?: continue
-            baseDir = findBasePackageDirectory(rootDir)
-            if (baseDir != null) {
-                break
-            } else {
-                baseDir = rootDir
+        val psiManager = PsiManager.getInstance(project)
+
+        val sourceFolders = ModuleRootManager
+            .getInstance(module)
+            .contentEntries
+            .flatMap { it.sourceFolders.asList() }
+
+        for (sourceFolder in sourceFolders) {
+            val dir = sourceFolder.file?.let { psiManager.findDirectory(it) } ?: continue
+            val found = findBasePackageDirectory(dir)
+            if (found != null) {
+                return found
             }
         }
-        return baseDir
+
+        return null
     }
 }

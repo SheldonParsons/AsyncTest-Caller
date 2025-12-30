@@ -95,9 +95,11 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
         val apiNode = node.userObject as? ApiNode ?: return
 
+        if (apiNode.code_type != CodeType.METHOD.code) return
+
         // 使用你提供的后台执行工具，避免阻塞 UI
         project.context().runBackgroundReadUI(
-            lockKey = "AST_CALLER_GET_MOCK", // 建议定义一个常量
+            lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION,
             backgroundTask = { p ->
                 // 在后台线程执行 PSI 解析和 Mock 获取
                 val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)

@@ -9,14 +9,25 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter.SimpleTypeResolver
 
 class SpringQueryResolver : RequestPartResolver {
-
-    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
+    private var paramDocStatement: String? = null
+    override fun push(
+        variable: ParamAnalysisResult,
+        apiRequest: ApiRequest,
+        implicitParams: MutableMap<String, DocInfo>,
+        hasDocs: Boolean
+    ): ApiRequest {
         if (variable.t !== null) {
-            val paramList = buildTree(variable.t, variable)
+            variable.docInfo?.let {
+                if (it.title.isNotEmpty()) {
+                    paramDocStatement = it.title
+                }
+            }
+            val paramList = buildTree(variable.t, variable, implicitParams)
             if (!paramList.isNullOrEmpty()) {
                 apiRequest.query = ResolverHelper.mergeHeadersOrParams(apiRequest.query, paramList, distinct = false)
                 ResolverHelper.addOrUpdateElement(
@@ -33,7 +44,7 @@ class SpringQueryResolver : RequestPartResolver {
     }
 
     fun buildTree(
-        psiType: PsiType, variable: ParamAnalysisResult
+        psiType: PsiType, variable: ParamAnalysisResult, implicitParams: MutableMap<String, DocInfo>
     ): MutableList<AsyncTestVariableNode>? {
         if (TypeUtils.isGeneralObject(psiType)) return null
         val typeStr = TypeUtils.mapToAsyncType(psiType)
@@ -91,7 +102,8 @@ class SpringQueryResolver : RequestPartResolver {
                 type = typeStr,
                 name = variable.name,
                 defaultValue = variable.defaultValue ?: "",
-                required = variable.isRequired
+                required = variable.isRequired,
+                statement = paramDocStatement ?: getImplicitParamDesc(implicitParams, variable.name) ?: ""
             )
             paramList.add(textNode)
         } else if (typeStr == AsyncTestType.ARRAY) {
@@ -100,7 +112,8 @@ class SpringQueryResolver : RequestPartResolver {
                 name = variable.name,
                 childList = arrayListOf(""),
                 defaultValue = variable.defaultValue ?: "",
-                required = variable.isRequired
+                required = variable.isRequired,
+                statement = paramDocStatement ?: getImplicitParamDesc(implicitParams, variable.name) ?: ""
             )
             paramList.add(textNode)
         }

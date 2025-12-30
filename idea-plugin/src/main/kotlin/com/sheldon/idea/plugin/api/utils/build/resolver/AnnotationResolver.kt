@@ -2,29 +2,120 @@ package com.sheldon.idea.plugin.api.utils.build.resolver
 
 import com.intellij.codeInsight.AnnotationUtil
 import com.intellij.psi.PsiAnnotation
+import com.intellij.psi.PsiAnnotationMemberValue
+import com.intellij.psi.PsiArrayInitializerMemberValue
+import com.intellij.psi.PsiBinaryExpression
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiExpression
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiReferenceExpression
+import com.intellij.psi.impl.JavaConstantExpressionEvaluator
 import com.sheldon.idea.plugin.api.service.SpringClassName
 
 object AnnotationResolver {
-    /**
-     * 查找类上的注解
-     * 策略：
-     * 1. 注解方向：支持元注解递归
-     * 2. 继承方向：支持向上查找父类 (Class Inheritance)
-     */
-    fun resolveForClass(psiClass: PsiClass, targetAnnotations: Collection<String>): PsiAnnotation? {
-        var currentClass: PsiClass? = psiClass
-        while (currentClass != null && currentClass.qualifiedName != "java.lang.Object") {
-            val found = resolveForElement(currentClass, targetAnnotations)
-            if (found != null) {
-                return found
+
+    fun getAnnotationAttribute(annotation: PsiAnnotation, attrName: String): PsiAnnotationMemberValue? {
+        return annotation.findAttributeValue(attrName)
+    }
+
+    fun getAnnotationAttributeValues(annotation: PsiAnnotation, attrName: String): List<String> {
+        val value = annotation.findAttributeValue(attrName) ?: return emptyList()
+        val result = mutableListOf<String>()
+        fun extract(element: PsiElement) {
+            when (element) {
+                is PsiLiteralExpression -> {
+                    val text = element.value as? String
+                    if (text != null) result.add(text)
+                }
+
+                is PsiReferenceExpression -> {
+                    val resolve = element.resolve()
+                    if (resolve is PsiField) {
+                        val constantVal = resolve.computeConstantValue() as? String
+                        if (constantVal != null) result.add(constantVal)
+                    }
+                }
+
+                is PsiBinaryExpression -> {
+                    try {
+                        val computed = JavaConstantExpressionEvaluator.computeConstantExpression(element, false)
+                        if (computed != null && computed is String) {
+                            result.add(computed)
+                        }
+                    } catch (e: Exception) {
+                    }
+                }
+
+                is PsiExpression -> {
+                    val computed = JavaConstantExpressionEvaluator.computeConstantExpression(element, false)
+                    if (computed is String) result.add(computed)
+                }
             }
-            currentClass = currentClass.superClass
         }
-        return null
+        if (value is PsiArrayInitializerMemberValue) {
+            value.initializers.forEach { extract(it) }
+        } else {
+            extract(value)
+        }
+        return result
+    }
+
+    fun getPath(annotation: PsiAnnotation): String {
+        return this.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_VALUE)
+            .ifEmpty { this.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_PATH) }
+            .firstOrNull() ?: ""
+    }
+
+    fun <T> parseConsumes(
+        annotation: PsiAnnotation,
+        attributeName: String,
+        once: Boolean = true,
+        factory: (value: String) -> T
+    ) {
+        val rawStrings = this.getAnnotationAttributeValues(annotation, attributeName)
+        for (raw in rawStrings) {
+            factory(raw)
+            if (once) break
+        }
+    }
+
+    fun <T> parseParamsOrHeaders(
+        annotation: PsiAnnotation,
+        attributeName: String,
+        factory: (key: String, value: String) -> T
+    ): MutableList<T> {
+        val result = mutableListOf<T>()
+        val rawStrings = this.getAnnotationAttributeValues(annotation, attributeName)
+        for (raw in rawStrings) {
+            val constraint = raw.trim()
+            if (constraint.isEmpty()) continue
+            if (constraint.startsWith("!")) {
+                if (constraint.contains("=")) {
+                    val parts = constraint.split("=", limit = 2)
+                    val key = parts[0].trim().removePrefix("!")
+                    val originalValue = parts.getOrElse(1) { "" }.trim()
+                    val fakeValue = generateNotEqualValue(originalValue)
+                    result.add(factory(key, fakeValue))
+                    continue
+                } else {
+                    continue
+                }
+            }
+            if (constraint.contains("=")) {
+                val parts = constraint.split("=", limit = 2)
+                val key = parts[0].trim()
+                val value = parts.getOrElse(1) { "" }.trim()
+                result.add(factory(key, value))
+                continue
+            }
+            result.add(factory(constraint, ""))
+        }
+        return result
     }
 
     /**
@@ -87,13 +178,15 @@ object AnnotationResolver {
         return false
     }
 
+
     /**
      * 不仅查当前类，还会去查实现的接口、继承的父类
      */
-    fun findAnnotationInHierarchy(psiClass: PsiClass, fqn: String): PsiAnnotation? {
+    fun findAnnotationInHierarchy(psiClassOrMethod: PsiModifierListOwner?, fqn: String): PsiAnnotation? {
+        if (psiClassOrMethod == null) return null
         // 方案 A: 使用 IntelliJ SDK 原生工具类 (推荐，最稳健)
         // 它会自动处理类继承、接口实现，甚至处理复杂的层级关系
-        return AnnotationUtil.findAnnotationInHierarchy(psiClass, setOf(fqn))
+        return AnnotationUtil.findAnnotationInHierarchy(psiClassOrMethod, setOf(fqn))
     }
 
     /**
@@ -129,6 +222,15 @@ object AnnotationResolver {
         return null
     }
 
+    fun isMappingMethod(method: PsiMethod): Boolean {
+        if (hasSpringMapping(method)) return true
+
+        for (superMethod in method.findSuperMethods(true)) {
+            if (hasSpringMapping(superMethod)) return true
+        }
+        return false
+    }
+
     /**
      * 辅助方法：判断某个方法上是否有 Spring Mapping 注解
      */
@@ -140,6 +242,7 @@ object AnnotationResolver {
         }
         return false
     }
+
 
     /**
      * 递归检查注解是否是目标注解 (Meta-Annotation Recursion)
@@ -180,6 +283,19 @@ object AnnotationResolver {
             return true
         }
         return false
+    }
+
+    private fun generateNotEqualValue(original: String): String {
+        if (original.isEmpty()) return "not_empty"
+        val chars = original.toCharArray()
+        val lastIndex = chars.lastIndex
+        val lastChar = chars[lastIndex]
+        chars[lastIndex] = if (lastChar.code > 33) {
+            (lastChar.code - 1).toChar()
+        } else {
+            (lastChar.code + 1).toChar()
+        }
+        return String(chars)
     }
 }
 

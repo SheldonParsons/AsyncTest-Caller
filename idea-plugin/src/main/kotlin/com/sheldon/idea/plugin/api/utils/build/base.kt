@@ -1,5 +1,6 @@
 package com.sheldon.idea.plugin.api.utils.build
 
+import com.intellij.codeInsight.AnnotationUtil
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiDocCommentOwner
@@ -18,6 +19,8 @@ import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.model.NodeType
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.PathUtils
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
+import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
@@ -27,7 +30,18 @@ import com.sheldon.idea.plugin.api.utils.calculateSafeHash
 abstract class TreeBuilder {
 
     fun findBasePackageDirectory(dir: PsiDirectory): PsiDirectory? {
-        if (dir.files.any { it is PsiJavaFile }) {
+        if (dir.files.any { it ->
+                if (it is PsiJavaFile) {
+                    for (psiClass in it.classes) {
+                        if (isSpringBootApplicationClass(psiClass)) {
+                            return@any true
+                        }
+                    }
+                    return@any false
+                } else {
+                    return@any false
+                }
+            }) {
             return dir
         }
         for (sub in dir.subdirectories) {
@@ -35,6 +49,35 @@ abstract class TreeBuilder {
             if (found != null) return found
         }
         return null
+    }
+
+    fun isSpringBootApplicationClass(psiClass: PsiClass): Boolean {
+        // 1️⃣ 直接注解
+        if (AnnotationUtil.isAnnotated(
+                psiClass,
+                SpringClassName.SPRING_BOOT_APP,
+                AnnotationUtil.CHECK_HIERARCHY
+            )
+        ) {
+            return true
+        }
+
+        // 2️⃣ 元注解（组合注解）
+        for (annotation in psiClass.modifierList?.annotations ?: emptyArray()) {
+            val resolved = annotation.nameReferenceElement?.resolve()
+            if (resolved is PsiClass) {
+                if (AnnotationUtil.isAnnotated(
+                        resolved,
+                        SpringClassName.SPRING_BOOT_APP,
+                        AnnotationUtil.CHECK_HIERARCHY
+                    )
+                ) {
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     fun isController(psiClass: PsiClass): Boolean {
@@ -46,21 +89,6 @@ abstract class TreeBuilder {
         return AnnotationResolver.hasAnnotations(
             psiClass, SpringClassName.SPRING_CONTROLLER_ANNOTATION, findAll = false
         )
-    }
-
-    fun isMappingMethod(method: PsiMethod): Boolean {
-        if (hasRequestMappingAnnotation(method)) return true
-
-        for (superMethod in method.findSuperMethods(true)) {
-            if (hasRequestMappingAnnotation(superMethod)) return true
-        }
-
-        return false
-    }
-
-    private fun hasRequestMappingAnnotation(method: PsiMethod): Boolean {
-        val annotations: Array<PsiAnnotation> = method.modifierList.annotations
-        return annotations.any { SpringClassName.SPRING_SINGLE_REQUEST_MAPPING_ANNOTATIONS.contains(it.qualifiedName) }
     }
 
     fun makeRootNode(module: Module): ApiNode {
@@ -89,19 +117,28 @@ abstract class TreeBuilder {
         )
     }
 
-    fun makeClassNode(classHelper: ClassHelper, psiClass: PsiClass, parentPath: String): ApiNode {
-        val (clsAlias, clsDesc) = classHelper.parseDoc(psiClass)
+    fun makeClassNode(
+        classHelper: ClassHelper,
+        psiClass: PsiClass,
+        parentPath: String,
+        hasDocs: Boolean = false
+    ): ApiNode {
+        val (docInfo: DocInfo, _) = DocResolver().resolve(psiClass, mutableMapOf(), CodeType.CLASS, hasDocs)
         val request = SpringClassResolver().resolveRequestMapping(psiClass)
-        return ApiNode(
+        val result = ApiNode(
             type = NodeType.INTERFACE.code,
             child_type = ChildNodeType.DIR.code,
             code_type = CodeType.CLASS.code,
             name = psiClass.name ?: "",
             tree_path = parentPath,
-            alias = clsAlias ?: "",
-            desc = clsDesc ?: "",
+            alias = docInfo.title,
+            desc = docInfo.description,
             classRequest = request
         )
+        if (hasDocs) {
+            result.docs = docInfo
+        }
+        return result
     }
 
     fun makeMethodNode(
@@ -109,14 +146,22 @@ abstract class TreeBuilder {
         psiMethod: PsiMethod,
         prefixPath: String,
         classNode: ApiNode,
+        hasDocs: Boolean = false,
         callback: (MethodHelper, ApiRequest) -> String
     ): ApiNode? {
-        val (mAlias, mDesc) = methodHelper.parseDoc(psiMethod)
-        val request: ApiRequest = methodHelper.getMethodNodeCoreInfo(classNode) ?: return null
+        val (docInfo: DocInfo, implicitParams) = DocResolver().resolve(
+            psiMethod,
+            mutableMapOf(),
+            CodeType.METHOD,
+            hasDocs
+        )
+        val request: ApiRequest =
+            methodHelper.getMethodNodeCoreInfo(classNode, implicitParams = implicitParams, hasDocs = hasDocs)
+                ?: return null
         request.path = PathUtils.normalizeToAsyncTestPath(request.path)
         request.name = psiMethod.name
-        request.alias = mAlias ?: ""
-        request.desc = mDesc ?: ""
+        request.alias = docInfo.title
+        request.desc = docInfo.description
         val hash = request.calculateSafeHash()
         request.hash = hash
         val requestKey = callback(methodHelper, request)
@@ -126,13 +171,16 @@ abstract class TreeBuilder {
             code_type = CodeType.METHOD.code,
             name = psiMethod.name,
             tree_path = "${prefixPath}.${psiMethod.name}[${CodeType.METHOD.code}]",
-            alias = mAlias,
-            desc = mDesc,
+            alias = docInfo.title,
+            desc = docInfo.description,
             request = requestKey,
             path = request.path,
             method = request.method,
             hash = hash
         )
+        if (hasDocs) {
+            result.docs = docInfo
+        }
         return result
     }
 
@@ -212,4 +260,5 @@ data class ParamAnalysisResult(
     val isRequired: Boolean = true,
     val t: PsiType? = null,
     val defaultValue: String? = null,
+    val docInfo: DocInfo? = null,
 )

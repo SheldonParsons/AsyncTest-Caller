@@ -13,6 +13,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.AbstractTableCellEditor
 import com.intellij.util.ui.JBUI
+import com.sheldon.idea.plugin.api.constant.CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
 import com.sheldon.idea.plugin.api.front.dashboard.renderer.DeleteButtonEditor
 import com.sheldon.idea.plugin.api.front.dashboard.renderer.DeleteIconRenderer
 import com.sheldon.idea.plugin.api.model.FormDataField
@@ -141,7 +142,7 @@ class FormDataTablePanel(private val project: Project) : JPanel(BorderLayout()) 
 
         val decorator = ToolbarDecorator.createDecorator(table)
             .setAddAction {
-                tableModel.addRow(arrayOf("", FormDataValue(), "Text", "", ""))
+                tableModel.addRow(arrayOf("", FormDataValue(), "Text", DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE, ""))
             }
             .disableRemoveAction()
             .disableUpDownActions()
@@ -307,7 +308,7 @@ class FormDataTablePanel(private val project: Project) : JPanel(BorderLayout()) 
             // Add 按钮
             val btnPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
             btnPanel.isOpaque = false
-            btnPanel.border = JBUI.Borders.empty(2, 0)
+            btnPanel.border = JBUI.Borders.empty(0, 0)
             btnPanel.maximumSize = Dimension(10000, 35) // 限制高度 24
             btnPanel.preferredSize = Dimension(100, 35)
 
@@ -316,7 +317,7 @@ class FormDataTablePanel(private val project: Project) : JPanel(BorderLayout()) 
 
             // ★ 修改点2：极度压缩 Padding (Margin)
             // JBUI.insets(top, left, bottom, right)，上下设为 0，左右设为 4
-            selectBtn.margin = JBUI.insets(0, 4)
+            selectBtn.margin = JBUI.insets(0, 0)
 
             // ★ 修改点3：(可选) 稍微调小一点字体，配合小按钮更协调
             selectBtn.font = com.intellij.util.ui.UIUtil.getLabelFont(com.intellij.util.ui.UIUtil.FontSize.SMALL)

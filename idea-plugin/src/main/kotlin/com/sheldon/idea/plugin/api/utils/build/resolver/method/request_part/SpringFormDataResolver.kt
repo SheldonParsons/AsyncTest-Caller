@@ -13,14 +13,26 @@ import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.CommonUtils
 import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter.SimpleTypeResolver
 
 class SpringFormDataResolver : RequestPartResolver {
-    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
+    private var paramDocStatement: String? = null
+    override fun push(
+        variable: ParamAnalysisResult,
+        apiRequest: ApiRequest,
+        implicitParams: MutableMap<String, DocInfo>,
+        hasDocs: Boolean
+    ): ApiRequest {
         val boundary = CommonUtils.getBoundaryString()
         if (variable.t !== null) {
-            val formDataList = buildTree(variable.t, variable)
+            variable.docInfo?.let {
+                if (it.title.isNotEmpty()) {
+                    paramDocStatement = it.title
+                }
+            }
+            val formDataList = buildTree(variable.t, variable, implicitParams)
             if (!formDataList.isNullOrEmpty()) {
                 apiRequest.formData = AsyncTestFormData(boundary, formDataList)
                 apiRequest.bodyType = AsyncTestBodyType.FORM_DATA
@@ -38,7 +50,7 @@ class SpringFormDataResolver : RequestPartResolver {
     }
 
     fun buildTree(
-        psiType: PsiType, variable: ParamAnalysisResult
+        psiType: PsiType, variable: ParamAnalysisResult, implicitParams: MutableMap<String, DocInfo>
     ): MutableList<AsyncTestVariableNode>? {
         if (TypeUtils.isGeneralObject(psiType)) return null
         val typeStr = TypeUtils.mapToAsyncType(psiType)
@@ -47,7 +59,8 @@ class SpringFormDataResolver : RequestPartResolver {
             val fileNode = AsyncTestVariableNode(
                 type = typeStr,
                 name = variable.name,
-                contentType = CommonConstant.DEFAULT_FORM_DATA_FILE_FIELD_CONTENT_TYPE
+                contentType = CommonConstant.DEFAULT_FORM_DATA_FILE_FIELD_CONTENT_TYPE,
+                statement = paramDocStatement ?: getImplicitParamDesc(implicitParams, variable.name) ?: ""
             )
             formDataList.add(fileNode)
         } else if (typeStr == AsyncTestType.DS) {
@@ -98,7 +111,8 @@ class SpringFormDataResolver : RequestPartResolver {
             )
         ) {
             val textNode = AsyncTestVariableNode(
-                type = typeStr, name = variable.name, contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
+                type = typeStr, name = variable.name, contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE,
+                statement = paramDocStatement ?: getImplicitParamDesc(implicitParams, variable.name) ?: ""
             )
             formDataList.add(textNode)
         } else if (typeStr == AsyncTestType.ARRAY) {
@@ -106,7 +120,8 @@ class SpringFormDataResolver : RequestPartResolver {
                 type = typeStr,
                 name = variable.name,
                 childList = arrayListOf(""),
-                contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE
+                contentType = CommonConstant.DEFAULT_FORM_DATA_FIELD_CONTENT_TYPE,
+                statement = paramDocStatement ?: getImplicitParamDesc(implicitParams, variable.name) ?: ""
             )
             formDataList.add(textNode)
         }

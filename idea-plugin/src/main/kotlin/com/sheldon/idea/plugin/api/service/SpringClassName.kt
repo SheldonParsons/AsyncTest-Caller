@@ -12,6 +12,8 @@ object SpringClassName {
         }
     }
 
+    const val SPRING_BOOT_APP = "org.springframework.boot.autoconfigure.SpringBootApplication"
+
     val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf(
         "javax.servlet.http.HttpServletRequest", "javax.servlet.http.HttpServletResponse"
     )
@@ -40,6 +42,24 @@ object SpringClassName {
     const val SPRING_ANN_AUTOWIRED = "org.springframework.beans.factory.annotation.Autowired"
     const val SPRING_ANN_VALUE = "org.springframework.beans.factory.annotation.Value"
 
+    // --- Swagger ---
+    const val SWAGGER_API = "io.swagger.annotations.Api"
+    const val SWAGGER_API_ATTR_VALUE = "value"
+    const val SWAGGER_API_ATTR_TAGS = "tags"
+    const val SWAGGER_API_ATTR_HIDDEN = "hidden"
+    const val SWAGGER_API_ATTR_PRODUCES = "produces"
+    const val SWAGGER_API_ATTR_CONSUMES = "consumes"
+
+    const val SWAGGER_API_OPERATION = "io.swagger.annotations.ApiOperation"
+
+    const val SWAGGER_API_IMPLICIT_PARAM = "io.swagger.annotations.ApiImplicitParam"
+    const val SWAGGER_API_IMPLICIT_PARAMS = "io.swagger.annotations.ApiImplicitParams"
+
+    const val SWAGGER_API_MODEL = "io.swagger.annotations.ApiModel"
+
+    const val SWAGGER_API_MODEL_PROPERTY = "io.swagger.annotations.ApiModelProperty"
+
+    const val SWAGGER_API_PARAM = "io.swagger.annotations.ApiParam"
 
 
     //@RequestMapping

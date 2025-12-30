@@ -13,6 +13,8 @@ import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.model.ModuleSetting
 import com.sheldon.idea.plugin.api.model.RemoteProject
 import com.sheldon.idea.plugin.api.utils.HttpExecutor
+import com.sheldon.idea.plugin.api.utils.SpringConfigReader
+import com.sheldon.idea.plugin.api.utils.build.BuildRootTree
 import com.sheldon.idea.plugin.api.utils.context
 import com.sheldon.idea.plugin.api.utils.runBackgroundReadUI
 import java.awt.BorderLayout
@@ -52,8 +54,24 @@ class ModuleMappingPanel(
             onDataChanged?.invoke()
         }
         if (allModules.isEmpty()) {
-            allModules = ArrayList(ModuleManager.getInstance(project).modules.map { it.name })
-            updateColumnEditor(0, allModules)
+            project.context().runBackgroundReadUI(
+                lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION,
+                backgroundTask = {
+                    val result = ArrayList<String>()
+                    val modules = ModuleManager.getInstance(project).modules
+                    for (module in modules) {
+                        val baseDir = BuildRootTree(module.project).getBaseDir(module)
+                        if (baseDir != null) {
+                            result.add(module.name)
+                        }
+                    }
+                    result
+                },
+                uiUpdate = { result, _ ->
+                    allModules = result
+                    updateColumnEditor(0, allModules)
+                }
+            )
         }
     }
 

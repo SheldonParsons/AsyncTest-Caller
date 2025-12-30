@@ -103,5 +103,5 @@ enum class ChildNodeType(val code: Int) {
 }
 
 enum class CodeType(val code: Int) {
-    MODULE(0), DIR(1), CLASS(2), METHOD(3);
+    MODULE(0), DIR(1), CLASS(2), METHOD(3), PARAM(4), POJO_CLASS(5), POJO_FIELD(6);
 }

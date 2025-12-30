@@ -6,12 +6,24 @@ import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 
 class SpringHeadersResolver : RequestPartResolver {
-    override fun push(variable: ParamAnalysisResult, apiRequest: ApiRequest): ApiRequest {
+    private var paramDocStatement: String? = null
+    override fun push(
+        variable: ParamAnalysisResult,
+        apiRequest: ApiRequest,
+        implicitParams: MutableMap<String, DocInfo>,
+        hasDocs: Boolean
+    ): ApiRequest {
         if (variable.t !== null) {
-            val headerList = buildTree(variable.t, variable)
+            variable.docInfo?.let {
+                if (it.title.isNotEmpty()) {
+                    paramDocStatement = it.title
+                }
+            }
+            val headerList = buildTree(variable.t, variable, implicitParams)
             if (!headerList.isNullOrEmpty()) {
                 apiRequest.headers =
                     ResolverHelper.mergeHeadersOrParams(apiRequest.headers, headerList) { it.name.lowercase() }
@@ -21,7 +33,7 @@ class SpringHeadersResolver : RequestPartResolver {
     }
 
     fun buildTree(
-        psiType: PsiType, variable: ParamAnalysisResult
+        psiType: PsiType, variable: ParamAnalysisResult, implicitParams: MutableMap<String, DocInfo>
     ): MutableList<AsyncTestVariableNode>? {
         if (TypeUtils.isGeneralObject(psiType)) return null
         val typeStr = TypeUtils.mapToAsyncType(psiType)
@@ -38,7 +50,8 @@ class SpringHeadersResolver : RequestPartResolver {
                 type = AsyncTestType.STRING,
                 name = variable.name,
                 defaultValue = variable.defaultValue ?: "",
-                required = variable.isRequired
+                required = variable.isRequired,
+                statement = paramDocStatement ?: getImplicitParamDesc(implicitParams, variable.name) ?: ""
             )
             headerList.add(textNode)
         }

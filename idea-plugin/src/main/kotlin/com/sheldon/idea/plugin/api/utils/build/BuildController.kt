@@ -1,7 +1,6 @@
 package com.sheldon.idea.plugin.api.utils.build
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.module.Module
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.service.SpringWebScanner
 import com.sheldon.idea.plugin.api.utils.ProjectCacheService

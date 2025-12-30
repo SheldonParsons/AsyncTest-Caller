@@ -6,6 +6,7 @@ import com.intellij.psi.PsiClass
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
+import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 
 class BuildMethodNode(
     val module: Module,
@@ -20,12 +21,8 @@ class BuildMethodNode(
     ) {
         val methods = classHelper.getMethods()
         for (psiMethod in methods) {
-            val containingClass = psiMethod.containingClass ?: continue
             val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
-//            if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
-//                continue
-//            }
-            if (isMappingMethod(psiMethod)) {
+            if (AnnotationResolver.isMappingMethod(psiMethod)) {
                 val methodNode =
                     makeMethodExcludeParam(methodHelper, psiMethod, classPath, classNode)
                 if (methodNode != null) callback(methodNode)

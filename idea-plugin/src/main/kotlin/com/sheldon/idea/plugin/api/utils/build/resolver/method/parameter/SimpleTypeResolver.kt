@@ -3,15 +3,25 @@ package com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiUtil
 import com.sheldon.idea.plugin.api.method.ParamLocation
+import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
+import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
 
 class SimpleTypeResolver : MethodParameterResolver {
-    override fun resolve(parameter: PsiParameter, method: PsiMethod, psiClass: PsiClass): ParamAnalysisResult? {
+    override fun resolve(
+        parameter: PsiParameter,
+        method: PsiMethod,
+        psiClass: PsiClass,
+        implicitParams: MutableMap<String, DocInfo>,
+        hasDocs: Boolean
+    ): ParamAnalysisResult? {
         if (isSimpleType(parameter.type)) {
+            val (docInfo, _) = DocResolver().resolve(parameter, mutableMapOf(), CodeType.PARAM, hasDocs)
             return ParamAnalysisResult(
                 location = ParamLocation.QUERY,
                 name = parameter.name,
-                t = parameter.type, isRequired = true
+                t = parameter.type, isRequired = true, docInfo = docInfo
             )
         }
         return null

@@ -19,47 +19,6 @@ import com.sheldon.idea.plugin.api.service.SpringClassName
 
 class ResolverHelper {
     companion object {
-        fun getAnnotationAttributeValues(annotation: PsiAnnotation, attrName: String): List<String> {
-            val value = annotation.findAttributeValue(attrName) ?: return emptyList()
-            val result = mutableListOf<String>()
-            fun extract(element: PsiElement) {
-                when (element) {
-                    is PsiLiteralExpression -> {
-                        val text = element.value as? String
-                        if (text != null) result.add(text)
-                    }
-
-                    is PsiReferenceExpression -> {
-                        val resolve = element.resolve()
-                        if (resolve is PsiField) {
-                            val constantVal = resolve.computeConstantValue() as? String
-                            if (constantVal != null) result.add(constantVal)
-                        }
-                    }
-
-                    is PsiBinaryExpression -> {
-                        try {
-                            val computed = JavaConstantExpressionEvaluator.computeConstantExpression(element, false)
-                            if (computed != null && computed is String) {
-                                result.add(computed)
-                            }
-                        } catch (e: Exception) {
-                        }
-                    }
-
-                    is PsiExpression -> {
-                        val computed = JavaConstantExpressionEvaluator.computeConstantExpression(element, false)
-                        if (computed is String) result.add(computed)
-                    }
-                }
-            }
-            if (value is PsiArrayInitializerMemberValue) {
-                value.initializers.forEach { extract(it) }
-            } else {
-                extract(value)
-            }
-            return result
-        }
 
         fun parseRequestMethod(annotation: PsiAnnotation): SpringClassName.RequestMethod? {
             val qName = annotation.qualifiedName ?: return null
@@ -120,59 +79,6 @@ class ResolverHelper {
                 extract(element)
             }
             return methods.firstOrNull()
-        }
-
-        fun getPath(annotation: PsiAnnotation): String {
-            return this.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_VALUE)
-                .ifEmpty { this.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_PATH) }
-                .firstOrNull() ?: ""
-        }
-
-        fun <T> parseConsumes(
-            annotation: PsiAnnotation,
-            attributeName: String,
-            once: Boolean = true,
-            factory: (value: String) -> T
-        ) {
-            val rawStrings = this.getAnnotationAttributeValues(annotation, attributeName)
-            for (raw in rawStrings) {
-                factory(raw)
-                if (once) break
-            }
-        }
-
-        fun <T> parseParamsOrHeaders(
-            annotation: PsiAnnotation,
-            attributeName: String,
-            factory: (key: String, value: String) -> T
-        ): MutableList<T> {
-            val result = mutableListOf<T>()
-            val rawStrings = this.getAnnotationAttributeValues(annotation, attributeName)
-            for (raw in rawStrings) {
-                val constraint = raw.trim()
-                if (constraint.isEmpty()) continue
-                if (constraint.startsWith("!")) {
-                    if (constraint.contains("=")) {
-                        val parts = constraint.split("=", limit = 2)
-                        val key = parts[0].trim().removePrefix("!")
-                        val originalValue = parts.getOrElse(1) { "" }.trim()
-                        val fakeValue = generateNotEqualValue(originalValue)
-                        result.add(factory(key, fakeValue))
-                        continue
-                    } else {
-                        continue
-                    }
-                }
-                if (constraint.contains("=")) {
-                    val parts = constraint.split("=", limit = 2)
-                    val key = parts[0].trim()
-                    val value = parts.getOrElse(1) { "" }.trim()
-                    result.add(factory(key, value))
-                    continue
-                }
-                result.add(factory(constraint, ""))
-            }
-            return result
         }
 
         private fun generateNotEqualValue(original: String): String {

@@ -5,6 +5,7 @@ import com.sheldon.idea.plugin.api.method.ParamLocation
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.model.AsyncTestFormData
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
+import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.SpringBodyResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.SpringFormDataResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.SpringHeadersResolver
@@ -18,18 +19,25 @@ class DispatcherParameterResolver {
     fun analyze(
         apiRequest: ApiRequest,
         parsedParams: List<ParamAnalysisResult>,
-        module: Module
+        module: Module,
+        implicitParams: MutableMap<String, DocInfo> = mutableMapOf(),
+        hasDocs: Boolean = false
     ): ApiRequest {
         var hasJsonBody = false
         for (result in parsedParams) {
             val location = result.location
             when (location) {
                 ParamLocation.QUERY -> {
-                    SpringQueryResolver().push(result, apiRequest)
+                    SpringQueryResolver().push(result, apiRequest, implicitParams = implicitParams, hasDocs = hasDocs)
                 }
 
                 ParamLocation.BODY -> {
-                    SpringBodyResolver(module).push(result, apiRequest)
+                    SpringBodyResolver(module).push(
+                        result,
+                        apiRequest,
+                        implicitParams = implicitParams,
+                        hasDocs = hasDocs
+                    )
                     apiRequest.formData = AsyncTestFormData()
                     hasJsonBody = true
                 }
@@ -38,11 +46,16 @@ class DispatcherParameterResolver {
                     if (hasJsonBody) {
                         continue
                     }
-                    SpringFormDataResolver().push(result, apiRequest)
+                    SpringFormDataResolver().push(
+                        result,
+                        apiRequest,
+                        implicitParams = implicitParams,
+                        hasDocs = hasDocs
+                    )
                 }
 
                 ParamLocation.HEADER -> {
-                    SpringHeadersResolver().push(result, apiRequest)
+                    SpringHeadersResolver().push(result, apiRequest, implicitParams = implicitParams, hasDocs = hasDocs)
                 }
             }
         }

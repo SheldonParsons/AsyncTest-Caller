@@ -18,6 +18,7 @@ import com.sheldon.idea.plugin.api.utils.SpringConfigReader
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterBuildRequest
+import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 
 class MethodNodeBuilder(private val project: Project, val session: ScanSession) : TreeBuilder() {
     fun scan(): RouteRegistry {
@@ -115,12 +116,8 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
         routerRegistry: RouteRegistry,
         prefix: String = ""
     ): Boolean {
-        val containingClass = psiMethod.containingClass ?: return false
         val methodHelper = MethodHelper(module, project, psiClass, psiMethod)
-//        if (!methodHelper.shouldIncludeMethod(psiClass, containingClass)) {
-//            return false
-//        }
-        if (isMappingMethod(psiMethod)) {
+        if (AnnotationResolver.isMappingMethod(psiMethod)) {
             val methodNode = makeMethodNode(
                 methodHelper,
                 psiMethod,
