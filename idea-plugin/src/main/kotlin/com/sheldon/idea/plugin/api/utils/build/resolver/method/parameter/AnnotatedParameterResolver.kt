@@ -44,7 +44,6 @@ class AnnotatedParameterResolver : MethodParameterResolver {
                 isRequired = info.required,
                 defaultValue = info.defaultValue,
                 docInfo = docInfo
-
             )
         }
         val cookieValue = parameter.findAnnotationInHierarchy(SpringClassName.COOKIE_VALUE_ANNOTATION)

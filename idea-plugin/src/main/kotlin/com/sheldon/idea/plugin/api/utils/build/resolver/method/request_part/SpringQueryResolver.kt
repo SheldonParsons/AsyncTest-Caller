@@ -37,7 +37,9 @@ class SpringQueryResolver : RequestPartResolver {
                         name = SpringClassName.CONTENT_TYPE,
                         defaultValue = SpringClassName.APPLICATION_JSON
                     )
-                )
+                ) {
+                    it.name
+                }
             }
         }
         return apiRequest
@@ -65,7 +67,7 @@ class SpringQueryResolver : RequestPartResolver {
                     }
                     if (SimpleTypeResolver().isSimpleType(field.type)) {
                         val textNode = AsyncTestVariableNode(
-                            type = typeStr,
+                            type = AsyncTestType.STRING,
                             name = field.name,
                             defaultValue = variable.defaultValue ?: "",
                             required = variable.isRequired
@@ -75,18 +77,6 @@ class SpringQueryResolver : RequestPartResolver {
                             textNode.statement = fieldComment
                         }
                         paramList.add(textNode)
-                    } else if (ResolverHelper.isMultipartFile(field.type)) {
-                        val fileNode = AsyncTestVariableNode(
-                            type = typeStr,
-                            name = field.name,
-                            defaultValue = variable.defaultValue ?: "",
-                            required = variable.isRequired
-                        )
-                        val fieldComment = ResolverHelper.getElementComment(field)
-                        if (fieldComment.isNotEmpty()) {
-                            fileNode.statement = fieldComment
-                        }
-                        paramList.add(fileNode)
                     }
                 }
             }

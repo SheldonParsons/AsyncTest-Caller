@@ -1,6 +1,7 @@
 package com.sheldon.idea.plugin.api.utils.build
 
 import com.intellij.codeInsight.AnnotationUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiDocCommentOwner
@@ -11,6 +12,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiType
+import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.method.ParamLocation
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.model.ApiRequest
@@ -18,6 +20,7 @@ import com.sheldon.idea.plugin.api.model.ChildNodeType
 import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.model.NodeType
 import com.sheldon.idea.plugin.api.service.SpringClassName
+import com.sheldon.idea.plugin.api.utils.GlobalObjectStorageService
 import com.sheldon.idea.plugin.api.utils.PathUtils
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
@@ -133,10 +136,13 @@ abstract class TreeBuilder {
             tree_path = parentPath,
             alias = docInfo.title,
             desc = docInfo.description,
+            path = request?.path,
             classRequest = request
         )
         if (hasDocs) {
             result.docs = docInfo
+            val cacheService = ApplicationManager.getApplication().getService(GlobalObjectStorageService::class.java)
+            cacheService.appendToList(CommonConstant.DOCS_OBJECT_CLASS_NODE_LIST, result)
         }
         return result
     }

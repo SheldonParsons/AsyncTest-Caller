@@ -23,6 +23,12 @@ dependencies {
     implementation(project(":common-api"))
     implementation(libs.gson)
     implementation(kotlin("reflect"))
+    // 核心模型库
+    implementation("io.swagger.core.v3:swagger-models:2.2.19")
+    // 序列化库
+    implementation("io.swagger.core.v3:swagger-core:2.2.19")
+    // 修复 CVE-2025-48924漏洞
+    implementation(libs.commonsLang3)
 
 
     implementation(libs.guice) {

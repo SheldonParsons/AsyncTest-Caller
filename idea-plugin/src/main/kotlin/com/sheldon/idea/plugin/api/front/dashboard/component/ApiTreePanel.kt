@@ -6,6 +6,9 @@ import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.TransactionGuard
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
@@ -34,6 +37,7 @@ import com.sheldon.idea.plugin.api.model.AsyncTestUpdateDataRequest
 import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.model.CollectNodeData
 import com.sheldon.idea.plugin.api.model.ModuleSetting
+import com.sheldon.idea.plugin.api.utils.GlobalObjectStorageService
 import com.sheldon.idea.plugin.api.utils.HttpExecutor
 import com.sheldon.idea.plugin.api.utils.Notifier
 import com.sheldon.idea.plugin.api.utils.ProjectCacheService
@@ -43,6 +47,8 @@ import com.sheldon.idea.plugin.api.utils.build.BuildDirectoryTree
 import com.sheldon.idea.plugin.api.utils.build.BuildRootTree
 import com.sheldon.idea.plugin.api.utils.build.MethodNodeBuilder
 import com.sheldon.idea.plugin.api.utils.build.PsiPathResolver
+import com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.OpenApiBuilder
+import com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.utils.ExportHelper
 import com.sheldon.idea.plugin.api.utils.context
 import com.sheldon.idea.plugin.api.utils.runBackgroundReadUI
 import com.sheldon.idea.plugin.api.utils.scanContext
@@ -140,9 +146,13 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                     return@runBackgroundReadUI PsiPathResolver.resolve(p, apiNode.tree_path)
                 },
                 uiUpdate = { psiElement, p ->
-                    if (psiElement is Navigatable && psiElement.canNavigate()) {
-                        psiElement.navigate(true)
-                    }
+                    if (psiElement == null || !((psiElement as? PsiElement)?.isValid)!!) return@runBackgroundReadUI
+
+                    ApplicationManager.getApplication().invokeLater({
+                        if (psiElement is Navigatable && psiElement.canNavigate()) {
+                            psiElement.navigate(true) // true 表示请求焦点
+                        }
+                    }, ModalityState.defaultModalityState())
                 }
             )
     }
@@ -583,6 +593,110 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                     })
             }
         })
+        if (apiNode.code_type != CodeType.METHOD.code) {
+            actionGroup.add(object :
+                AnAction("导出 OpenApi 3.0(JSON)", "Export OpenApi 3.0", AllIcons.Actions.Download) {
+                override fun actionPerformed(event: AnActionEvent) {
+                    tree.isEnabled = false
+                    project.context()
+                        .runBackgroundReadUI(lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION, backgroundTask = { p ->
+                            val resultElementType = PsiPathResolver.resolve(p, apiNode.tree_path)
+                            val cacheService = ProjectCacheService.getInstance(p)
+                            when (resultElementType) {
+                                is Module -> {
+                                    scanContext(ScanSession()) { session ->
+                                        val routeRegistry =
+                                            MethodNodeBuilder(project, session).scanModule(
+                                                resultElementType,
+                                                hasDocs = true
+                                            )
+                                        val newNode =
+                                            BuildRootTree(project).buildModule(resultElementType) { directory, parentNode, pathPrefix, module ->
+                                                BuildDirectoryTree(module, project).build(
+                                                    directory,
+                                                    parentNode,
+                                                    pathPrefix,
+                                                ) { psiClass, pathPrefix ->
+                                                    BuildControllerNode(module, project).build(
+                                                        psiClass, pathPrefix, routeRegistry
+                                                    )
+                                                }
+                                            }
+                                    }
+                                }
+
+                                is PsiDirectory -> {
+                                    val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
+                                    if (module != null) {
+                                        val cacheResult = getCacheDataAndClean(cacheService, module, apiNode)
+                                            ?: return@runBackgroundReadUI null
+                                        val (moduleTree, _, oldParentNode) = cacheResult
+                                        scanContext(ScanSession()) { session ->
+                                            val routeRegistry =
+                                                MethodNodeBuilder(project, session).scanDir(
+                                                    module,
+                                                    resultElementType,
+                                                    hasDocs = true
+                                                )
+                                            val newNode = BuildDirectoryTree(module, project).buildDir(
+                                                resultElementType,
+                                                oldParentNode.tree_path,
+                                            ) { psiClass, pathPrefix ->
+                                                BuildControllerNode(module, project).build(
+                                                    psiClass, pathPrefix, routeRegistry
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                is PsiClass -> {
+                                    val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
+                                    if (module != null) {
+                                        val cacheResult = getCacheDataAndClean(cacheService, module, apiNode)
+                                            ?: return@runBackgroundReadUI null
+                                        val (moduleTree, _, oldParentNode) = cacheResult
+                                        scanContext(ScanSession()) { session ->
+                                            val routeRegistry =
+                                                MethodNodeBuilder(project, session).scanClass(
+                                                    module,
+                                                    resultElementType,
+                                                    hasDocs = true
+                                                )
+                                            val newNode = BuildControllerNode(module, project).build(
+                                                resultElementType, oldParentNode.tree_path, routeRegistry
+                                            ) ?: return@runBackgroundReadUI null
+                                        }
+                                    }
+                                }
+                            }
+                            val objectCacheService =
+                                ApplicationManager.getApplication().getService(GlobalObjectStorageService::class.java)
+                            val docsApiNodeList =
+                                objectCacheService.get<MutableList<ApiNode>>(CommonConstant.DOCS_OBJECT_CLASS_NODE_LIST)
+                            println("docsApiNodeList:${docsApiNodeList}")
+                            println("size:${docsApiNodeList?.size}")
+                            if (docsApiNodeList != null && docsApiNodeList.isNotEmpty()) {
+                                val docJsonString = OpenApiBuilder().build(docsApiNodeList)
+                                return@runBackgroundReadUI docJsonString
+                            } else {
+                                return@runBackgroundReadUI null
+                            }
+                        }, uiUpdate = { result, p ->
+                            if (result == null) {
+                                Notifier.notifyWarning(p, "AsyncTest Caller", "导出失败，未找到可导出节点")
+                            } else {
+                                ExportHelper.exportJsonToFile(project, result)
+                                Notifier.notifyInfo(p, "AsyncTest Caller", "导出成功")
+                            }
+                            tree.isEnabled = true
+                        })
+
+
+                }
+            })
+        }
+
         val popupMenu = actionManager.createActionPopupMenu("ApiTreePopup", actionGroup)
         val component = popupMenu.component
         component.show(e.component, e.x, e.y)

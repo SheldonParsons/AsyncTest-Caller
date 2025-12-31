@@ -1,6 +1,7 @@
 package com.sheldon.idea.plugin.api.utils.build.docs
 
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiImplicitParamInfo
+import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiModelInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiModelPropertyInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiOperationInfo
@@ -9,8 +10,7 @@ import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiParamInfo
 open class DocInfo(
     var title: String = "",
     var description: String = "",
-    var consumes: String = "",
-    var hidden: Boolean = false,
+    var apiInfo: ApiInfo? = ApiInfo(),
     var apiOperationInfo: ApiOperationInfo = ApiOperationInfo(),
     var apiImplicitParamInfo: ApiImplicitParamInfo = ApiImplicitParamInfo(),
     var apiModelInfo: ApiModelInfo = ApiModelInfo(),

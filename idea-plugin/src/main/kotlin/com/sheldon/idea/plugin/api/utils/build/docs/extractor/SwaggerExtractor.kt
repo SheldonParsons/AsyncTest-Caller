@@ -21,6 +21,7 @@ import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiModelPropertyParser
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiOperationParser
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiParamInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiParamParser
+import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiParser
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.findAnnotationInHierarchy
 
@@ -59,19 +60,15 @@ class SwaggerExtractor : DocExtractor {
 
     private fun handleApi(psiClass: PsiClass, currentDoc: DocInfo, hasDocs: Boolean): String {
         val annotation: PsiAnnotation = getAnnotation(psiClass, SpringClassName.SWAGGER_API) ?: return ""
-        val valueResult =
-            AnnotationResolver.getAnnotationAttributeValues(annotation, SpringClassName.SWAGGER_API_ATTR_VALUE)
-        if (hasDocs) {
-            val hiddenResult: PsiAnnotationMemberValue? =
-                AnnotationResolver.getAnnotationAttribute(annotation, SpringClassName.SWAGGER_API_ATTR_HIDDEN)
-            currentDoc.hidden = (hiddenResult as? PsiLiteralExpression)?.value as? Boolean ?: false
-            val consumesResult =
-                AnnotationResolver.getAnnotationAttributeValues(annotation, SpringClassName.SWAGGER_API_ATTR_CONSUMES)
-            currentDoc.consumes = if (consumesResult.isNotEmpty()) consumesResult.first() else ""
+        val apiInfo = ApiParser.parse(annotation)
+        if (apiInfo.value.isEmpty()) {
+            apiInfo.value = psiClass.qualifiedName.toString()
         }
-        val tagsResult =
-            AnnotationResolver.getAnnotationAttributeValues(annotation, SpringClassName.SWAGGER_API_ATTR_TAGS)
-        return if (tagsResult.isNotEmpty()) tagsResult.first() else valueResult.first()
+        if (hasDocs) {
+            apiInfo.qualifiedName = psiClass.qualifiedName ?: ""
+            currentDoc.apiInfo = apiInfo
+        }
+        return apiInfo.tags.first()
     }
 
     private fun handleApiOperation(

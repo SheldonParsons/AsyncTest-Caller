@@ -4,7 +4,7 @@ intellijPlugin = "1.17.4"
 plugin-version = "1.0.0"
 # 常用工具库
 gson = "2.10.1"
-commonsLang3 = "3.14.0"
+commonsLang3 = "3.18.0"
 jackson = "2.12.2"
 okhttp = "4.12.0"
 guice = "5.1.0"

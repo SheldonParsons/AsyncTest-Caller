@@ -58,7 +58,9 @@ class SpringBodyResolver(val module: Module) :
                         name = SpringClassName.CONTENT_TYPE,
                         defaultValue = SpringClassName.APPLICATION_JSON
                     )
-                )
+                ) {
+                    it.name
+                }
                 apiRequest.bodyType = AsyncTestBodyType.JSON
             }
         }
@@ -85,6 +87,9 @@ class SpringBodyResolver(val module: Module) :
                 CodeType.POJO_FIELD,
                 hasDocs = privateHasDoc
             )
+            if (privateHasDoc) {
+                node.docInfo = docInfo
+            }
             val fieldComment = docInfo.title
             if (fieldComment.isNotEmpty()) {
                 node.statement = fieldComment
@@ -103,6 +108,9 @@ class SpringBodyResolver(val module: Module) :
                     CodeType.POJO_CLASS,
                     hasDocs = privateHasDoc
                 )
+                if (privateHasDoc) {
+                    node.docInfo = docInfo
+                }
                 val classComment = docInfo.title
                 if (classComment.isNotEmpty()) {
                     node.statement = classComment
@@ -126,7 +134,7 @@ class SpringBodyResolver(val module: Module) :
                     data = mutableListOf(node)
                 )
                 ds.hash = ds.calculateSafeHash()
-                AfterNode.execute(module, dsTargetId, ds)
+                AfterNode.execute(module, dsTargetId, ds, hasDocs = privateHasDoc)
                 return node
             } else {
                 if (!sessionIds.contains(dsTargetId)) {
@@ -185,6 +193,9 @@ class SpringBodyResolver(val module: Module) :
             CodeType.POJO_CLASS,
             hasDocs = privateHasDoc
         )
+        if (privateHasDoc) {
+            definitionNode.docInfo = docInfo
+        }
         val classComment = docInfo.title
         if (classComment.isNotEmpty()) {
             definitionNode.statement = classComment
@@ -195,7 +206,7 @@ class SpringBodyResolver(val module: Module) :
             data = mutableListOf(definitionNode)
         )
         ds.hash = ds.calculateSafeHash()
-        AfterNode.execute(module, dsTargetId, ds)
+        AfterNode.execute(module, dsTargetId, ds, hasDocs = privateHasDoc)
     }
 
     /**

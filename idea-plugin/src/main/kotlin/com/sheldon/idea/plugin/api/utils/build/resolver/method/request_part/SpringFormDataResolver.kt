@@ -43,7 +43,9 @@ class SpringFormDataResolver : RequestPartResolver {
                         name = SpringClassName.CONTENT_TYPE,
                         defaultValue = SpringClassName.MULTIPART_FORM_DATA
                     )
-                )
+                ) {
+                    it.name
+                }
             }
         }
         return apiRequest

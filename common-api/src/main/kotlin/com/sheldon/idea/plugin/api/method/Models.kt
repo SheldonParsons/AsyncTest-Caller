@@ -59,6 +59,8 @@ data class AsyncTestVariableNode(
     @Tag("file_list")
     @XCollection(style = XCollection.Style.v2)
     var fileList: ArrayList<String> = arrayListOf(),
+    
+    var docInfo: Any? = null
 ) {
 
     init {

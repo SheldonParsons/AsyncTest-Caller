@@ -44,15 +44,11 @@ object SpringClassName {
 
     // --- Swagger ---
     const val SWAGGER_API = "io.swagger.annotations.Api"
-    const val SWAGGER_API_ATTR_VALUE = "value"
-    const val SWAGGER_API_ATTR_TAGS = "tags"
-    const val SWAGGER_API_ATTR_HIDDEN = "hidden"
-    const val SWAGGER_API_ATTR_PRODUCES = "produces"
-    const val SWAGGER_API_ATTR_CONSUMES = "consumes"
 
     const val SWAGGER_API_OPERATION = "io.swagger.annotations.ApiOperation"
 
     const val SWAGGER_API_IMPLICIT_PARAM = "io.swagger.annotations.ApiImplicitParam"
+    
     const val SWAGGER_API_IMPLICIT_PARAMS = "io.swagger.annotations.ApiImplicitParams"
 
     const val SWAGGER_API_MODEL = "io.swagger.annotations.ApiModel"
