@@ -1,12 +1,10 @@
 package com.sheldon.idea.plugin.api.front.dashboard.renderer
-
 import com.intellij.icons.AllIcons
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.sheldon.idea.plugin.api.model.ApiNode
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
-
 class ApiTreeCellRenderer : ColoredTreeCellRenderer() {
     override fun customizeCellRenderer(
         tree: JTree,
@@ -43,7 +41,6 @@ class ApiTreeCellRenderer : ColoredTreeCellRenderer() {
             }
         }
     }
-
     private fun getMethodColor(method: String?): java.awt.Color? {
         return when (method?.uppercase()) {
             "GET" -> java.awt.Color(73, 156, 84)

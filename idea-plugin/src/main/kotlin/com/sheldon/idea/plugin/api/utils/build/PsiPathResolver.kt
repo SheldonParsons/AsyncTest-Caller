@@ -1,16 +1,13 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
-
 object PsiPathResolver {
     data class PathSegment(
         val name: String,
         val type: Int
     )
-
     fun resolve(project: Project, pathStr: String): Any? {
         val segments = parsePath(pathStr)
         if (segments.isEmpty()) return null
@@ -35,18 +32,15 @@ object PsiPathResolver {
         }
         return currentElement
     }
-
     private fun findInModuleRoots(module: Module, segment: PathSegment): Any? {
         val rootDir = BuildRootTree(module.project).getBaseDir(module) ?: return null
         return findInDirectory(rootDir, segment)
     }
-
     private fun findInDirectory(dir: PsiDirectory, segment: PathSegment): Any? {
         return when (segment.type) {
             1 -> {
                 dir.findSubdirectory(segment.name)
             }
-
             2 -> {
                 var psiClass = JavaDirectoryService.getInstance().getClasses(dir).find { it.name == segment.name }
                 if (psiClass == null) {
@@ -57,18 +51,15 @@ object PsiPathResolver {
                 }
                 psiClass
             }
-
             else -> null
         }
     }
-
     private fun findInClass(psiClass: PsiClass, segment: PathSegment): Any? {
         if (segment.type == 3) {
             return psiClass.findMethodsByName(segment.name, false).firstOrNull()
         }
         return null
     }
-
     private fun parsePath(pathStr: String): List<PathSegment> {
         return pathStr.split(".").mapNotNull { segmentStr ->
             val match = Regex("""^(.*)\[(\d+)\]$""").find(segmentStr)

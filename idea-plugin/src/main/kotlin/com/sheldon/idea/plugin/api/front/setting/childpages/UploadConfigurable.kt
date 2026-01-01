@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.setting.childpages
-
 import com.google.gson.JsonParser
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -18,7 +17,6 @@ import com.sheldon.idea.plugin.api.model.RemoteProject
 import com.sheldon.idea.plugin.api.utils.HttpExecutor
 import javax.swing.JLabel
 import java.awt.Color
-
 class UploadConfigurable(private val project: Project) : BoundConfigurable("上传AsyncTest") {
     private val cacheService = project.getService(ProjectCacheService::class.java)
     private val globalSettings = cacheService.getGlobalSettings()
@@ -47,17 +45,14 @@ class UploadConfigurable(private val project: Project) : BoundConfigurable("上�
         }
         isModifiedFlag = false
     }
-
     override fun isModified(): Boolean {
         return super.isModified() || isModifiedFlag
     }
-
     override fun createPanel(): DialogPanel {
         mappingPanelHelper = ModuleMappingPanel(project, arrayListOf(), projectSettingsTable)
         mappingPanelHelper!!.onDataChanged = {
             isModifiedFlag = true
         }
-        
         val groupUI = mappingPanelHelper!!.createPanel()
         val panel = panel {
             group("身份认证") {
@@ -88,12 +83,8 @@ class UploadConfigurable(private val project: Project) : BoundConfigurable("上�
                         } else {
                             urlInput.component.text 
                         }
-                        
                         ApplicationManager.getApplication().executeOnPooledThread {
-                            
-                            
                             val success = verifyToken(targetUrl, String(tokenInput.component.password))
-
                             ApplicationManager.getApplication().invokeLater({
                                 if (success) {
                                     statusLabel.component.text = "验证成功"
@@ -120,7 +111,6 @@ class UploadConfigurable(private val project: Project) : BoundConfigurable("上�
         }
         return panel
     }
-
     private fun verifyToken(url: String, token: String): Boolean {
         val httpExecutor = HttpExecutor()
         httpExecutor.setMethod("POST")

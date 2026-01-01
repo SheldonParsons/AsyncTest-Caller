@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils
-
 import com.intellij.lang.properties.psi.PropertiesFile
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
@@ -10,11 +9,9 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.yaml.psi.YAMLFile
 import org.jetbrains.yaml.psi.YAMLMapping
 import org.jetbrains.yaml.psi.YAMLScalar
-
 object SpringConfigReader {
     private const val DEFAULT_PORT = "8080"
     private const val DEFAULT_HOST = "http://localhost"
-
     fun getSpringBaseUrl(module: Module): String {
         val config = readSpringConfig(module)
         val port = config["port"]?.takeIf { it.isNotBlank() } ?: DEFAULT_PORT
@@ -27,7 +24,6 @@ object SpringConfigReader {
         }
         return "$DEFAULT_HOST:$port$contextPath"
     }
-
     private fun readSpringConfig(module: Module): Map<String, String> {
         val project = module.project
         val scope = GlobalSearchScope.moduleRuntimeScope(module, false)
@@ -52,7 +48,6 @@ object SpringConfigReader {
         }
         return finalConfig
     }
-
     private fun parseProperties(project: Project, file: VirtualFile): Map<String, String> {
         val psiFile = PsiManager.getInstance(project).findFile(file) as? PropertiesFile ?: return emptyMap()
         val result = mutableMapOf<String, String>()
@@ -62,7 +57,6 @@ object SpringConfigReader {
         if (contextPath != null) result["context-path"] = contextPath
         return result
     }
-
     private fun parseYaml(project: Project, file: VirtualFile): Map<String, String> {
         val psiFile = PsiManager.getInstance(project).findFile(file) as? YAMLFile ?: return emptyMap()
         val result = mutableMapOf<String, String>()

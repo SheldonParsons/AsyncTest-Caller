@@ -1,9 +1,7 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method
-
 import com.intellij.psi.PsiParameter
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
-
 object SpringIgnoredTypeResolver {
     /**
      * 判断参数是否应该被忽略

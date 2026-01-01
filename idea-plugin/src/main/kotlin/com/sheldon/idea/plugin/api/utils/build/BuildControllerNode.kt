@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
@@ -7,7 +6,6 @@ import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.utils.RouteKey
 import com.sheldon.idea.plugin.api.utils.RouteRegistry
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
-
 class BuildControllerNode(
     val module: Module,
     val project: Project,
@@ -36,7 +34,6 @@ class BuildControllerNode(
 //        classNode.classRequest = null
         return classNode
     }
-
     fun buildMethod(psiClass: PsiClass, pathPrefix: String, routeRegistry: RouteRegistry, onResult: (ApiNode) -> Unit) {
         val classHelper = ClassHelper(module, project, psiClass)
         val classNode = makeClassNode(classHelper, psiClass, pathPrefix)

@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.dashboard.component.child
-
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.intellij.icons.AllIcons
@@ -17,7 +16,6 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.datatransfer.StringSelection
 import javax.swing.JPanel
-
 /**
  * 一个带有工具栏的 JSON 编辑器组件
  */
@@ -26,18 +24,14 @@ class JsonEditorPanel(
     parentDisposable: Disposable,
     private var mainTitle: String
 ) : JBPanel<JsonEditorPanel>(BorderLayout()), Disposable {
-
     private var editor: Editor? = null
-
     init {
         // 1. 创建 Document (文档内容)
         val editorFactory = EditorFactory.getInstance()
         val document = editorFactory.createDocument("")
-
         // 2. 创建 Editor (编辑器实例)
         // JsonFileType.INSTANCE 需要插件依赖 com.intellij.modules.json 或者 com.intellij.java
         editor = editorFactory.createEditor(document, project, JsonFileType.INSTANCE, false)
-
         // 3. 配置 Editor 设置
         editor?.settings?.apply {
             isLineNumbersShown = true       // 显示行号
@@ -46,7 +40,6 @@ class JsonEditorPanel(
             isUseSoftWraps = true           // 自动换行
             isAdditionalPageAtBottom = false // 底部不留大片空白
         }
-
         // 4. 创建左侧/顶部的工具栏
         val actionGroup = DefaultActionGroup().apply {
             add(createFormatAction())
@@ -58,27 +51,19 @@ class JsonEditorPanel(
         val actionToolbar = ActionManager.getInstance()
             .createActionToolbar("JsonEditorToolbar", actionGroup, true) // false表示垂直工具栏，true为水平
         actionToolbar.targetComponent = this
-
         // 5. 组装 UI
         val toolbarComponent = actionToolbar.component
         toolbarComponent.border =
             javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, com.intellij.ui.JBColor.border())
-
         add(toolbarComponent, BorderLayout.NORTH)
         add(editor!!.component, BorderLayout.CENTER)
-
         val lineHeight = editor?.lineHeight ?: 20
-
         val toolbarHeight = toolbarComponent.preferredSize.height
-
         val targetHeight = toolbarHeight + (lineHeight * 2) + 4
-
         this.minimumSize = Dimension(0, 0)
-
         this.preferredSize = Dimension(100, targetHeight)
         Disposer.register(parentDisposable, this)
     }
-
     /**
      * 设置文本内容
      */
@@ -89,14 +74,12 @@ class JsonEditorPanel(
             editor?.document?.setText(safeText)
         }
     }
-
     /**
      * 获取文本内容
      */
     fun getText(): String {
         return editor?.document?.text ?: ""
     }
-
     /**
      * 动作：格式化 JSON
      */
@@ -105,7 +88,6 @@ class JsonEditorPanel(
             override fun actionPerformed(e: AnActionEvent) {
                 val currentText = getText()
                 if (currentText.isBlank()) return
-
                 try {
                     // 使用 Gson 进行简单的格式化
                     val jsonElement = JsonParser.parseString(currentText)
@@ -118,7 +100,6 @@ class JsonEditorPanel(
             }
         }
     }
-
     /**
      * 动作：清空内容
      */
@@ -129,7 +110,6 @@ class JsonEditorPanel(
             }
         }
     }
-
     /**
      * 动作：复制内容 (虽然 Editor 自带 Ctrl+C，但有个按钮更直观)
      */
@@ -146,7 +126,6 @@ class JsonEditorPanel(
             }
         }
     }
-
     /**
      * 销毁资源，防止内存泄漏 (非常重要！)
      */
@@ -158,19 +137,16 @@ class JsonEditorPanel(
         }
         editor = null
     }
-
     private fun createExpandAction(mainTitle: String): AnAction {
         return object : AnAction("放大查看", "在弹窗中全屏编辑", AllIcons.General.ExpandComponent) {
             override fun actionPerformed(e: AnActionEvent) {
                 // 1. 获取当前内容
                 val currentText = getText()
-
                 // 2. 创建弹窗
                 val dialog = JsonExpandedDialog(project, mainTitle, currentText) { newText ->
                     // 3. 回调处理：当弹窗点击 OK 后，更新当前面板的内容
                     setText(newText)
                 }
-
                 // 4. 显示弹窗
                 dialog.show()
             }

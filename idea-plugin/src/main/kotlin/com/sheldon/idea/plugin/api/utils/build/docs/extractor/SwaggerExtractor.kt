@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.docs.extractor
-
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiAnnotationMemberValue
 import com.intellij.psi.PsiClass
@@ -24,17 +23,13 @@ import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiParamParser
 import com.sheldon.idea.plugin.api.utils.build.docs.utils.ApiParser
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.findAnnotationInHierarchy
-
 class SwaggerExtractor : DocExtractor {
     override fun getOrder() = 20
-
     override fun extract(context: ExtractionContext, currentDoc: DocInfo, codeType: CodeType, hasDocs: Boolean) {
         val element = context.targetElement
         val paramMetadata = context.paramMetadata
-
         var swaggerTitle: String? = null
         var swaggerDesc: String? = null
-
         // 1. 处理类 (@Api)
         if (isClass(codeType, element)) {
             swaggerTitle = handleApi(element as PsiClass, currentDoc, hasDocs)
@@ -54,10 +49,8 @@ class SwaggerExtractor : DocExtractor {
             val (title, _) = handleApiParam(element as PsiParameter, currentDoc, hasDocs)
             swaggerTitle = title
         }
-
         currentDoc.merge(swaggerTitle, swaggerDesc)
     }
-
     private fun handleApi(psiClass: PsiClass, currentDoc: DocInfo, hasDocs: Boolean): String {
         val annotation: PsiAnnotation = getAnnotation(psiClass, SpringClassName.SWAGGER_API) ?: return ""
         val apiInfo = ApiParser.parse(annotation)
@@ -70,7 +63,6 @@ class SwaggerExtractor : DocExtractor {
         }
         return apiInfo.tags.first()
     }
-
     private fun handleApiOperation(
         psiMethod: PsiMethod, currentDoc: DocInfo, hasDocs: Boolean, paramMetadata: MutableMap<String, DocInfo>
     ): Pair<String, String> {
@@ -92,7 +84,6 @@ class SwaggerExtractor : DocExtractor {
         }
         return Pair(apiOperationInfo.title, apiOperationInfo.desc)
     }
-
     private fun handleApiModel(
         psiMethod: PsiClass, currentDoc: DocInfo, hasDocs: Boolean
     ): Pair<String, String> {
@@ -104,7 +95,6 @@ class SwaggerExtractor : DocExtractor {
         }
         return Pair(apiModelInfo.name, apiModelInfo.description)
     }
-
     private fun handleApiModelProperty(
         psiMethod: PsiField, currentDoc: DocInfo, hasDocs: Boolean
     ): Pair<String, String> {
@@ -118,7 +108,6 @@ class SwaggerExtractor : DocExtractor {
             apiModelPropertyInfo.title, ""
         )
     }
-
     private fun handleApiParam(
         psiMethod: PsiParameter, currentDoc: DocInfo, hasDocs: Boolean
     ): Pair<String, String> {
@@ -132,7 +121,6 @@ class SwaggerExtractor : DocExtractor {
             apiParamInfo.name, ""
         )
     }
-
     // 辅助方法：你需要实现基于 PSI 获取注解值的逻辑
     private fun getAnnotation(
         element: PsiElement, fqn: String
@@ -146,25 +134,19 @@ class SwaggerExtractor : DocExtractor {
         }
         return null
     }
-
     private fun isClass(codeType: CodeType, element: PsiElement): Boolean {
         return codeType == CodeType.CLASS && element is PsiClass
     }
-
     private fun isMethod(codeType: CodeType, element: PsiElement): Boolean {
         return codeType == CodeType.METHOD && element is PsiMethod
     }
-
     private fun isParam(codeType: CodeType, element: PsiElement): Boolean {
         return codeType == CodeType.PARAM && element is PsiParameter
     }
-
     private fun isPojoClass(codeType: CodeType, element: PsiElement): Boolean {
         return codeType == CodeType.POJO_CLASS && element is PsiClass
     }
-
     private fun isPojoField(codeType: CodeType, element: PsiElement): Boolean {
         return codeType == CodeType.POJO_FIELD && element is PsiField
     }
-
 }

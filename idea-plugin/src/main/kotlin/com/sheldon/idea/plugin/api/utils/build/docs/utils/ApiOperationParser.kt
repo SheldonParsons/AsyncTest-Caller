@@ -1,21 +1,17 @@
 package com.sheldon.idea.plugin.api.utils.build.docs.utils
-
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiReferenceExpression
-
 // ---------------------- 数据模型 ----------------------
 data class ApiResponseHeader(
     val name: String,
     val response: String
 )
-
 data class ApiExtension(
     val name: String,
     val value: String
 )
-
 data class ApiOperationInfo(
     val title: String = "",
     val desc: String = "",
@@ -30,10 +26,8 @@ data class ApiOperationInfo(
     val code: Int = 200,
     val extensions: List<ApiExtension> = emptyList()
 )
-
 // ---------------------- 工具类 ----------------------
 object ApiOperationParser {
-
     fun parse(annotation: PsiAnnotation): ApiOperationInfo {
         val title = annotation.getStringAttribute("value") ?: ""
         val desc = annotation.getStringAttribute("notes") ?: ""
@@ -47,7 +41,6 @@ object ApiOperationParser {
         val responseHeaders = annotation.getResponseHeaders()
         val code = annotation.getIntAttribute("code") ?: 200
         val extensions = annotation.getExtensions()
-
         return ApiOperationInfo(
             title = title,
             desc = desc,
@@ -63,18 +56,13 @@ object ApiOperationParser {
             extensions = extensions
         )
     }
-
     // ---------------------- 辅助解析函数 ----------------------
-
     private fun PsiAnnotation.getStringAttribute(name: String): String? =
         (findAttributeValue(name) as? PsiLiteralExpression)?.value as? String
-
     private fun PsiAnnotation.getIntAttribute(name: String): Int? =
         (findAttributeValue(name) as? PsiLiteralExpression)?.value as? Int
-
     private fun PsiAnnotation.getBooleanAttribute(name: String): Boolean =
         (findAttributeValue(name) as? PsiLiteralExpression)?.value as? Boolean ?: false
-
     private fun PsiAnnotation.getStringArrayAttribute(name: String): List<String> {
         val attr = findAttributeValue(name)
         return when (attr) {
@@ -83,7 +71,6 @@ object ApiOperationParser {
             else -> emptyList()
         }
     }
-
     private fun PsiAnnotation.getClassAttribute(name: String): String? {
         val attr = findAttributeValue(name)
         return when (attr) {
@@ -91,7 +78,6 @@ object ApiOperationParser {
             else -> null
         }
     }
-
     private fun PsiAnnotation.getAuthorizations(): List<String> {
         val attr = findAttributeValue("authorizations")
         return when (attr) {
@@ -100,12 +86,10 @@ object ApiOperationParser {
             else -> emptyList()
         }
     }
-
     private fun parseAuthorization(annotation: PsiAnnotation?): String? {
         annotation ?: return null
         return annotation.getStringAttribute("value")
     }
-
     private fun PsiAnnotation.getResponseHeaders(): List<ApiResponseHeader> {
         val attr = findAttributeValue("responseHeaders")
         return when (attr) {
@@ -114,14 +98,12 @@ object ApiOperationParser {
             else -> emptyList()
         }
     }
-
     private fun parseResponseHeader(annotation: PsiAnnotation?): ApiResponseHeader? {
         annotation ?: return null
         val name = annotation.getStringAttribute("name") ?: return null
         val response = annotation.getClassAttribute("response") ?: "Void"
         return ApiResponseHeader(name, response)
     }
-
     private fun PsiAnnotation.getExtensions(): List<ApiExtension> {
         val attr = findAttributeValue("extensions")
         return when (attr) {
@@ -130,7 +112,6 @@ object ApiOperationParser {
             else -> emptyList()
         }
     }
-
     private fun parseExtension(annotation: PsiAnnotation?): ApiExtension? {
         annotation ?: return null
         val propsAttr = annotation.findAttributeValue("properties") as? PsiArrayInitializerMemberValue ?: return null

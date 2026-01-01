@@ -1,11 +1,9 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method
-
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
-
 class SpringParameterResolver {
     /**
      * 解析方法的所有入参
@@ -29,7 +27,6 @@ class SpringParameterResolver {
         }
         return results
     }
-
     /**
      * 分析单个参数
      */

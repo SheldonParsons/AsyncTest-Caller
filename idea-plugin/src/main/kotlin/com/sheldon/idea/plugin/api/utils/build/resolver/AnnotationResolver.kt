@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver
-
 import com.intellij.codeInsight.AnnotationUtil
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiAnnotationMemberValue
@@ -16,13 +15,10 @@ import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.impl.JavaConstantExpressionEvaluator
 import com.sheldon.idea.plugin.api.service.SpringClassName
-
 object AnnotationResolver {
-
     fun getAnnotationAttribute(annotation: PsiAnnotation, attrName: String): PsiAnnotationMemberValue? {
         return annotation.findAttributeValue(attrName)
     }
-
     fun getAnnotationAttributeValues(annotation: PsiAnnotation, attrName: String): List<String> {
         val value = annotation.findAttributeValue(attrName) ?: return emptyList()
         val result = mutableListOf<String>()
@@ -32,7 +28,6 @@ object AnnotationResolver {
                     val text = element.value as? String
                     if (text != null) result.add(text)
                 }
-
                 is PsiReferenceExpression -> {
                     val resolve = element.resolve()
                     if (resolve is PsiField) {
@@ -40,7 +35,6 @@ object AnnotationResolver {
                         if (constantVal != null) result.add(constantVal)
                     }
                 }
-
                 is PsiBinaryExpression -> {
                     try {
                         val computed = JavaConstantExpressionEvaluator.computeConstantExpression(element, false)
@@ -50,7 +44,6 @@ object AnnotationResolver {
                     } catch (e: Exception) {
                     }
                 }
-
                 is PsiExpression -> {
                     val computed = JavaConstantExpressionEvaluator.computeConstantExpression(element, false)
                     if (computed is String) result.add(computed)
@@ -64,13 +57,11 @@ object AnnotationResolver {
         }
         return result
     }
-
     fun getPath(annotation: PsiAnnotation): String {
         return this.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_VALUE)
             .ifEmpty { this.getAnnotationAttributeValues(annotation, SpringClassName.ATTR_PATH) }
             .firstOrNull() ?: ""
     }
-
     fun <T> parseConsumes(
         annotation: PsiAnnotation,
         attributeName: String,
@@ -83,7 +74,6 @@ object AnnotationResolver {
             if (once) break
         }
     }
-
     fun <T> parseParamsOrHeaders(
         annotation: PsiAnnotation,
         attributeName: String,
@@ -117,7 +107,6 @@ object AnnotationResolver {
         }
         return result
     }
-
     /**
      * 通用基础查找：只负责在当前元素上找，以及递归找元注解
      */
@@ -134,7 +123,6 @@ object AnnotationResolver {
         }
         return null
     }
-
     /**
      * 递归检查 (Meta-Annotation Recursion)
      * 只要找到 targets 中的任意一个，立即返回该注解实例
@@ -163,7 +151,6 @@ object AnnotationResolver {
         }
         return null
     }
-
     /**
      * 是否存在某个注解，对于类
      */
@@ -177,8 +164,6 @@ object AnnotationResolver {
         }
         return false
     }
-
-
     /**
      * 不仅查当前类，还会去查实现的接口、继承的父类
      */
@@ -188,7 +173,6 @@ object AnnotationResolver {
         // 它会自动处理类继承、接口实现，甚至处理复杂的层级关系
         return AnnotationUtil.findAnnotationInHierarchy(psiClassOrMethod, setOf(fqn))
     }
-
     /**
      * 检查一个元素（类）上是否标记了 Controller 注解
      */
@@ -204,7 +188,6 @@ object AnnotationResolver {
         }
         return false
     }
-
     /**
      * 递归查找带有 Spring Mapping 注解的方法
      * 逻辑：先查自己 -> 没有则查父类/接口 (DFS/BFS)
@@ -221,16 +204,13 @@ object AnnotationResolver {
         }
         return null
     }
-
     fun isMappingMethod(method: PsiMethod): Boolean {
         if (hasSpringMapping(method)) return true
-
         for (superMethod in method.findSuperMethods(true)) {
             if (hasSpringMapping(superMethod)) return true
         }
         return false
     }
-
     /**
      * 辅助方法：判断某个方法上是否有 Spring Mapping 注解
      */
@@ -242,8 +222,6 @@ object AnnotationResolver {
         }
         return false
     }
-
-
     /**
      * 递归检查注解是否是目标注解 (Meta-Annotation Recursion)
      */
@@ -284,7 +262,6 @@ object AnnotationResolver {
         }
         return false
     }
-
     private fun generateNotEqualValue(original: String): String {
         if (original.isEmpty()) return "not_empty"
         val chars = original.toCharArray()
@@ -298,23 +275,18 @@ object AnnotationResolver {
         return String(chars)
     }
 }
-
-
 fun PsiParameter.findAnnotationInHierarchy(annotationFqn: String): PsiAnnotation? {
     // 1. 先查自己 (最快)
     val selfAnnotation = this.getAnnotation(annotationFqn)
     if (selfAnnotation != null) {
         return selfAnnotation
     }
-
     // 2. 获取当前参数所属的方法 (Scope)
     val method = this.declarationScope as? PsiMethod ?: return null
-
     // 3. 计算自己是第几个参数 (Index)
     // index 会被缓存，性能消耗极小
     val index = method.parameterList.getParameterIndex(this)
     if (index == -1) return null
-
     // 4. 查找所有父类/接口方法
     val superMethods = method.findSuperMethods()
     for (superMethod in superMethods) {
@@ -328,6 +300,5 @@ fun PsiParameter.findAnnotationInHierarchy(annotationFqn: String): PsiAnnotation
             }
         }
     }
-
     return null
 }

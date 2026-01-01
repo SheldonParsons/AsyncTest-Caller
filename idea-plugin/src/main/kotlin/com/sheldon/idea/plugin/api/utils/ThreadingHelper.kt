@@ -1,16 +1,11 @@
 package com.sheldon.idea.plugin.api.utils
-
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.DumbService
-
-
 data class ContextExecutor(val project: Project)
-
 fun Project.context() = ContextExecutor(this)
-
 fun ContextExecutor.runBackgroundRead(
     backgroundTask: (Project) -> Unit
 ) {
@@ -32,7 +27,6 @@ fun ContextExecutor.runBackgroundRead(
         }
     }
 }
-
 fun <T> ContextExecutor.runBackgroundReadUI(
     lockKey: String? = null,
     requiresReadAction: Boolean = true,
@@ -81,6 +75,7 @@ fun <T> ContextExecutor.runBackgroundReadUI(
                 }
             }, ModalityState.any())
         } catch (e: Exception) {
+            e.printStackTrace()
             application.invokeLater({
                 try {
                     if (!projectRef.isDisposed) {

@@ -1,11 +1,9 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter
-
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
-
 interface MethodParameterResolver {
     /**
      * 尝试解析参数

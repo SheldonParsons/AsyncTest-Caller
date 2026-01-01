@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.dashboard.utils
-
 import com.intellij.openapi.project.Project
 import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.model.ApiNode
@@ -9,10 +8,7 @@ import com.sheldon.idea.plugin.api.utils.ProjectCacheService
 import com.sheldon.idea.plugin.api.utils.build.BuildController
 import com.sheldon.idea.plugin.api.utils.context
 import com.sheldon.idea.plugin.api.utils.runBackgroundReadUI
-
-
 object TreeAction {
-
     fun reloadTree(project: Project, force: Boolean = false, ui: (MutableMap<String, ApiNode>, Project) -> Unit) {
         project.context()
             .runBackgroundReadUI(

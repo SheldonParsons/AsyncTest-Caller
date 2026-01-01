@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part
-
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
@@ -21,7 +20,6 @@ import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterNode
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.calculateSafeHash
-
 class SpringBodyResolver(val module: Module) :
     RequestPartResolver {
     private var privateHasDoc: Boolean = false
@@ -66,7 +64,6 @@ class SpringBodyResolver(val module: Module) :
         }
         return apiRequest
     }
-
     fun buildTree(
         psiType: PsiType,
         name: String,
@@ -155,7 +152,6 @@ class SpringBodyResolver(val module: Module) :
                     }
                 }
             }
-
             AsyncTestType.OBJECT -> {
                 if (TypeUtils.isMapType(psiType)) {
                     val valueType = extractMapValueType(psiType)
@@ -170,7 +166,6 @@ class SpringBodyResolver(val module: Module) :
         }
         return node
     }
-
     /**
      * 专门用于构建并保存 DS 定义 (用于缓存)
      * 这相当于让这个 DS 自己做了一次“根节点”的处理
@@ -208,7 +203,6 @@ class SpringBodyResolver(val module: Module) :
         ds.hash = ds.calculateSafeHash()
         AfterNode.execute(module, dsTargetId, ds, hasDocs = privateHasDoc)
     }
-
     /**
      * 辅助：处理 POJO 字段
      */

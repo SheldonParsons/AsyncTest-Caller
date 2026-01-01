@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils
-
 import com.google.gson.GsonBuilder
 import com.intellij.openapi.module.Module
 import com.sheldon.idea.plugin.api.method.AsyncTestBodyType
@@ -9,7 +8,6 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.model.FormDataField
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-
 class MockGenerator(val module: Module) {
     private val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
     fun generate(
@@ -29,7 +27,6 @@ class MockGenerator(val module: Module) {
             prefix = prefix
         )
     }
-
     private fun buildHeaders(headers: List<AsyncTestVariableNode>): String {
         val headerMap = mutableMapOf<String, String>()
         headers.forEach { node ->
@@ -39,7 +36,6 @@ class MockGenerator(val module: Module) {
         }
         return if (headerMap.isEmpty()) "" else gson.toJson(headerMap)
     }
-
     private fun buildQueryJson(query: List<AsyncTestVariableNode>): String {
         val map = mutableMapOf<String, String>()
         query.forEach { node ->
@@ -49,7 +45,6 @@ class MockGenerator(val module: Module) {
         }
         return if (map.isEmpty()) "" else gson.toJson(map)
     }
-
     private fun buildBody(request: ApiRequest, dsResolver: (String) -> AsyncTestVariableNode?): String {
         return when (request.bodyType) {
             AsyncTestBodyType.JSON -> {
@@ -57,7 +52,6 @@ class MockGenerator(val module: Module) {
                 val jsonObject = parseNodeValue(rootNode, dsResolver, depth = 0)
                 gson.toJson(jsonObject)
             }
-
             AsyncTestBodyType.FORM_DATA -> {
                 val formDataMap = mutableMapOf<String, Any>()
                 request.formData.data.forEach { node ->
@@ -85,12 +79,10 @@ class MockGenerator(val module: Module) {
                 }
                 gson.toJson(formDataMap)
             }
-
             AsyncTestBodyType.NONE -> ""
             else -> ""
         }
     }
-
     private fun parseNodeValue(
         originalNode: AsyncTestVariableNode,
         dsResolver: (String) -> AsyncTestVariableNode?,
@@ -122,7 +114,6 @@ class MockGenerator(val module: Module) {
                 }
                 map
             }
-
             "array" -> {
                 val list = mutableListOf<Any?>()
                 if (workingNode.children.isNotEmpty()) {
@@ -137,11 +128,9 @@ class MockGenerator(val module: Module) {
                 }
                 list
             }
-
             else -> workingNode.defaultValue
         }
     }
-
     fun toUrlEncodedQuery(jsonQuery: String?): String {
         if (jsonQuery.isNullOrEmpty()) return ""
         try {

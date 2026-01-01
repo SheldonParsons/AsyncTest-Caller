@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.service
-
 import com.intellij.openapi.project.Project
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.utils.ScanSession
@@ -7,7 +6,6 @@ import com.sheldon.idea.plugin.api.utils.build.BuildControllerNode
 import com.sheldon.idea.plugin.api.utils.build.BuildDirectoryTree
 import com.sheldon.idea.plugin.api.utils.build.BuildRootTree
 import com.sheldon.idea.plugin.api.utils.build.MethodNodeBuilder
-
 /**
  * 核心扫描服务：用于查找项目中的所有 Spring Web Controller
  */

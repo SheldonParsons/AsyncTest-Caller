@@ -1,12 +1,10 @@
 package com.sheldon.idea.plugin.api.utils.build.lifecycle
-
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.sheldon.idea.plugin.api.constant.CommonConstant
 import com.sheldon.idea.plugin.api.model.DataStructure
 import com.sheldon.idea.plugin.api.utils.GlobalObjectStorageService
 import com.sheldon.idea.plugin.api.utils.ProjectCacheService
-
 object AfterNode {
     fun execute(
         module: Module,

@@ -4,6 +4,7 @@ import com.intellij.psi.CommonClassNames
 import com.intellij.psi.PsiArrayType
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiPrimitiveType
 import com.intellij.psi.PsiSubstitutor
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.InheritanceUtil
@@ -14,6 +15,31 @@ import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 
 object TypeUtils {
+    // 方案 A：针对每个属性抑制（推荐，清晰明了）
+    @Suppress("DEPRECATION")
+    val INT: PsiPrimitiveType = PsiType.INT
+
+    @Suppress("DEPRECATION")
+    val LONG: PsiPrimitiveType = PsiType.LONG
+
+    @Suppress("DEPRECATION")
+    val SHORT: PsiPrimitiveType = PsiType.SHORT
+
+    @Suppress("DEPRECATION")
+    val BYTE: PsiPrimitiveType = PsiType.BYTE
+
+    @Suppress("DEPRECATION")
+    val DOUBLE: PsiPrimitiveType = PsiType.DOUBLE
+
+    @Suppress("DEPRECATION")
+    val FLOAT: PsiPrimitiveType = PsiType.FLOAT
+
+    @Suppress("DEPRECATION")
+    val BOOLEAN: PsiPrimitiveType = PsiType.BOOLEAN
+
+    @Suppress("DEPRECATION")
+    val VOID: PsiPrimitiveType = PsiType.VOID
+
     fun mapToAsyncType(type: PsiType): String {
         val canonicalText = type.canonicalText
         if (ResolverHelper.isMultipartFile(type)) {
@@ -22,21 +48,21 @@ object TypeUtils {
         if (isArrayOrCollection(type)) {
             return AsyncTestType.ARRAY
         }
-        if (PsiType.INT.isAssignableFrom(type) || PsiType.LONG
-                .isAssignableFrom(type) || PsiType.SHORT.isAssignableFrom(type) || PsiType.BYTE
+        if (INT.isAssignableFrom(type) || LONG
+                .isAssignableFrom(type) || SHORT.isAssignableFrom(type) || BYTE
                 .isAssignableFrom(type) || canonicalText == CommonClassNames.JAVA_LANG_INTEGER || canonicalText == CommonClassNames.JAVA_LANG_LONG
         ) {
             return AsyncTestType.INTEGER
         }
-        if (PsiType.DOUBLE.isAssignableFrom(type) || PsiType.FLOAT
+        if (DOUBLE.isAssignableFrom(type) || FLOAT
                 .isAssignableFrom(type) || canonicalText == SpringClassName.JAVA_MATH_BIG_DECIMAL
         ) {
             return AsyncTestType.NUMBER
         }
-        if (PsiType.BOOLEAN.isAssignableFrom(type) || canonicalText == CommonClassNames.JAVA_LANG_BOOLEAN) {
+        if (BOOLEAN.isAssignableFrom(type) || canonicalText == CommonClassNames.JAVA_LANG_BOOLEAN) {
             return AsyncTestType.BOOLEAN
         }
-        if (PsiType.VOID.isAssignableFrom(type)) {
+        if (VOID.isAssignableFrom(type)) {
             return AsyncTestType.NULL
         }
         if (canonicalText == CommonClassNames.JAVA_LANG_STRING || InheritanceUtil.isInheritor(

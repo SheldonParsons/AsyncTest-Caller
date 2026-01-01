@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.parser
-
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.sheldon.idea.plugin.api.method.AsyncTestBodyType
@@ -10,11 +9,9 @@ import com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.resolver.Typ
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.parameters.RequestBody
-
 class RequestBodyParser(
     private val context: OpenApiBuildContext
 ) {
-
     fun parse(methodNode: ApiNode, request: ApiRequest): RequestBody? {
         if (request.bodyType == AsyncTestBodyType.FORM_DATA) {
             val nodeList = request.formData.data

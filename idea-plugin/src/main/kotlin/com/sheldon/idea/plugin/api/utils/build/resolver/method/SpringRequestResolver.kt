@@ -1,12 +1,10 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method
-
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
-
 class SpringRequestResolver {
     private val annotationResolver = SpringMethodAnnotationResolver()
     private val parameterResolver = SpringParameterResolver()

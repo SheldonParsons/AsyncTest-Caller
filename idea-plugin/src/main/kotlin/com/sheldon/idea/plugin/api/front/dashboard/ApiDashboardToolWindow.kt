@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.dashboard
-
 import com.google.gson.GsonBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.DumbAware
@@ -23,7 +22,6 @@ import java.awt.BorderLayout
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
-
 class ApiDashboardToolWindow : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val dashboardPanel = ApiDashboardPanel(project)
@@ -34,7 +32,6 @@ class ApiDashboardToolWindow : ToolWindowFactory, DumbAware {
             dashboardPanel.loadData(isForceRefresh = false)
         }
     }
-
     class ApiDashboardPanel(private val project: Project) {
         val treePanel = ApiTreePanel(project)
         val moduleSelector = ModuleSelector(project, treePanel)
@@ -56,43 +53,35 @@ class ApiDashboardToolWindow : ToolWindowFactory, DumbAware {
             }.apply {
                 border = javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)
             }
-
             val splitter = JBSplitter(true, 0.6f)
             splitter.firstComponent = treePanel
             splitter.secondComponent = null
-
             debugPanel.onClose = {
                 splitter.secondComponent = null
             }
             treePanel.onCloseMock = {
                 splitter.secondComponent = null
             }
-
             treePanel.onNodeSelected = { mockRequest, moduleName ->
                 if (splitter.secondComponent == null) {
                     splitter.secondComponent = debugPanel
                 }
                 debugPanel.setData(mockRequest, moduleName)
             }
-
             val mainPanel = JPanel(BorderLayout())
             mainPanel.add(topBar, BorderLayout.NORTH)
             mainPanel.add(splitter, BorderLayout.CENTER)
-
             return mainPanel
         }
-
         fun loadData(isForceRefresh: Boolean) {
             if (DumbService.isDumb(project)) {
                 Notifier.notifyWarning(project, content = "索引正在构建中，请稍后刷新")
                 return
             }
-
             refreshButton?.let {
                 it.icon = AnimatedIcon.Default()
                 it.isEnabled = false
             }
-
             TreeAction.reloadTree(project, force = isForceRefresh) { treeMap, _ ->
                 try {
                     if (treeMap.isEmpty()) {

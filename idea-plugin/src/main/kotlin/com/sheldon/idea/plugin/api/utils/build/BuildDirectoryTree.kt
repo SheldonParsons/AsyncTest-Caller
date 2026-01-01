@@ -1,12 +1,10 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiJavaFile
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.intellij.openapi.project.Project
-
 class BuildDirectoryTree(
     val module: Module,
     val project: Project,
@@ -19,7 +17,6 @@ class BuildDirectoryTree(
     ) {
         recursiveBuild(rootDir, rootNode, rootPrefix, nextBuild)
     }
-
     fun buildDir(
         rootDir: PsiDirectory,
         rootPrefix: String,
@@ -27,7 +24,6 @@ class BuildDirectoryTree(
     ): ApiNode {
         return recursiveBuildDirNode(rootDir, rootPrefix, nextBuild)
     }
-
     private fun recursiveBuildDirNode(
         currentDir: PsiDirectory,
         pathPrefix: String,
@@ -59,7 +55,6 @@ class BuildDirectoryTree(
         }
         return currentNode
     }
-
     private fun recursiveBuild(
         currentDir: PsiDirectory,
         parentNode: ApiNode,

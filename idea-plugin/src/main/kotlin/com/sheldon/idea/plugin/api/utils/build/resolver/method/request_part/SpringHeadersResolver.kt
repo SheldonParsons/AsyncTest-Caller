@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part
-
 import com.intellij.psi.PsiType
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
@@ -8,7 +7,6 @@ import com.sheldon.idea.plugin.api.utils.TypeUtils
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
-
 class SpringHeadersResolver : RequestPartResolver {
     private var paramDocStatement: String? = null
     override fun push(
@@ -31,7 +29,6 @@ class SpringHeadersResolver : RequestPartResolver {
         }
         return apiRequest
     }
-
     fun buildTree(
         psiType: PsiType, variable: ParamAnalysisResult, implicitParams: MutableMap<String, DocInfo>
     ): MutableList<AsyncTestVariableNode>? {

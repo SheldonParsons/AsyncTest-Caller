@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter
-
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiUtil
 import com.sheldon.idea.plugin.api.method.ParamLocation
@@ -7,7 +6,6 @@ import com.sheldon.idea.plugin.api.model.CodeType
 import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
-
 class SimpleTypeResolver : MethodParameterResolver {
     override fun resolve(
         parameter: PsiParameter,
@@ -26,7 +24,6 @@ class SimpleTypeResolver : MethodParameterResolver {
         }
         return null
     }
-
     /**
      * 判断是否为 "简单类型" (Spring MVC 可以直接通过 Converter 转换的类型)
      * 包括：基本类型、String、Date、Number、Enum、URI、URL、UUID、Locale...
@@ -50,7 +47,6 @@ class SimpleTypeResolver : MethodParameterResolver {
         if (psiClass.isEnum) return true
         return isWhitelistedSimpleType(qName)
     }
-
     /**
      * 简单类型白名单
      */
@@ -73,11 +69,9 @@ class SimpleTypeResolver : MethodParameterResolver {
             else -> false
         }
     }
-
     private fun isWrapperOrNumber(qName: String): Boolean {
         return qName == "java.lang.Boolean" || qName == "java.lang.Character" || qName == "java.lang.Byte" || qName == "java.lang.Short" || qName == "java.lang.Integer" || qName == "java.lang.Long" || qName == "java.lang.Float" || qName == "java.lang.Double" || qName == "java.lang.Number"
     }
-
     private fun isCollection(qName: String): Boolean {
         return qName == "java.util.Collection" || qName == "java.util.List" || qName == "java.util.Set" || qName == "java.util.ArrayList" || qName == "java.util.LinkedList" || qName == "java.util.HashSet"
     }

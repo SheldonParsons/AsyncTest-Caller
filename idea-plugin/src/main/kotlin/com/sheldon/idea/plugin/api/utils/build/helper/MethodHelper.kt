@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.helper
-
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
@@ -10,7 +9,6 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.utils.build.BaseHelper
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.SpringRequestResolver
-
 class MethodHelper(val module: Module, val project: Project, val psiClass: PsiClass, val psiMethod: PsiMethod) :
     BaseHelper() {
     fun getMethodNodeCoreInfo(

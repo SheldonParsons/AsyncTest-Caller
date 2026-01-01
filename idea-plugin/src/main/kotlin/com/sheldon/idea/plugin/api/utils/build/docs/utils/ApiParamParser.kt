@@ -1,9 +1,7 @@
 package com.sheldon.idea.plugin.api.utils.build.docs.utils
-
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiLiteralExpression
-
 // ---------------------- 数据模型 ----------------------
 data class ApiParamInfo(
     val name: String = "",
@@ -20,10 +18,8 @@ data class ApiParamInfo(
     val collectionFormat: String = "",
     val extensions: List<ApiExtension> = emptyList()
 )
-
 // ---------------------- 工具类 ----------------------
 object ApiParamParser {
-
     fun parse(annotation: PsiAnnotation): ApiParamInfo {
         val name = annotation.getStringAttribute("name") ?: ""
         val description = annotation.getStringAttribute("value") ?: ""
@@ -38,7 +34,6 @@ object ApiParamParser {
         val readOnly = annotation.getBooleanAttribute("readOnly")
         val collectionFormat = annotation.getStringAttribute("collectionFormat") ?: ""
         val extensions = annotation.getExtensions()
-
         return ApiParamInfo(
             name = name,
             description = description,
@@ -55,28 +50,21 @@ object ApiParamParser {
             extensions = extensions
         )
     }
-
     // ---------------------- 辅助解析函数 ----------------------
-
     private fun PsiAnnotation.getStringAttribute(name: String): String? =
         (findAttributeValue(name) as? PsiLiteralExpression)?.value as? String
-
     private fun PsiAnnotation.getBooleanAttribute(name: String): Boolean =
         (findAttributeValue(name) as? PsiLiteralExpression)?.value as? Boolean ?: false
-
     private fun PsiAnnotation.getExtensions(): List<ApiExtension> {
         val attr = findAttributeValue("extensions")
         return when (attr) {
             is PsiArrayInitializerMemberValue ->
                 attr.initializers.mapNotNull { parseExtension(it as? PsiAnnotation) }
-
             is PsiAnnotation ->
                 listOfNotNull(parseExtension(attr))
-
             else -> emptyList()
         }
     }
-
     private fun parseExtension(annotation: PsiAnnotation?): ApiExtension? {
         annotation ?: return null
         val propsAttr =

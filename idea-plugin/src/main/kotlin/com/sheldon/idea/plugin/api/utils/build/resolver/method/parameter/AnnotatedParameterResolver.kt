@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter
-
 import com.intellij.psi.*
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiUtil
@@ -13,7 +12,6 @@ import com.sheldon.idea.plugin.api.utils.build.docs.DocResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.findAnnotationInHierarchy
-
 class AnnotatedParameterResolver : MethodParameterResolver {
     override fun resolve(
         parameter: PsiParameter,
@@ -91,7 +89,6 @@ class AnnotatedParameterResolver : MethodParameterResolver {
         }
         return null
     }
-
     private fun isHeaderContainer(type: PsiType): Boolean {
         val psiClass = PsiUtil.resolveClassInType(type) ?: return false
         val qName = psiClass.qualifiedName ?: return false
@@ -108,9 +105,7 @@ class AnnotatedParameterResolver : MethodParameterResolver {
         }
         return false
     }
-
     data class BasicInfo(val name: String, val required: Boolean, val defaultValue: String? = null)
-
     /**
      * 提取注解通用的 name, required, defaultValue 属性
      */
@@ -131,7 +126,6 @@ class AnnotatedParameterResolver : MethodParameterResolver {
         }
         return BasicInfo(name, required, defaultValue)
     }
-
     private fun getBooleanAttribute(annotation: PsiAnnotation, name: String, defaultVal: Boolean): Boolean {
         val value = annotation.findAttributeValue(name) ?: return defaultVal
         if (value.text == "true") return true

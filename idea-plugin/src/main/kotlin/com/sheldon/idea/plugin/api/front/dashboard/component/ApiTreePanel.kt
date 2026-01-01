@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.dashboard.component
-
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -58,17 +57,12 @@ import java.awt.event.MouseEvent
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
-
 typealias OnApiSelectListener = (ApiMockRequest?, String?) -> Unit
-
 class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
     private val tree: Tree
     private val treeModel: DefaultTreeModel
-
     var onNodeSelected: OnApiSelectListener? = null
-
     var onCloseMock: (() -> Unit)? = null
-
     init {
         val root = DefaultMutableTreeNode("Loading...")
         treeModel = DefaultTreeModel(root)
@@ -80,11 +74,9 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
             override fun mousePressed(e: MouseEvent) {
                 handleContextMenu(e)
             }
-
             override fun mouseReleased(e: MouseEvent) {
                 handleContextMenu(e)
             }
-
             override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount == 2 && e.button == MouseEvent.BUTTON1) {
                     handleDoubleClick(e)
@@ -95,14 +87,11 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         })
         setContent(JBScrollPane(tree))
     }
-
     private fun handleSingleClick(e: MouseEvent) {
         val path = tree.getPathForLocation(e.x, e.y) ?: return
         val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
         val apiNode = node.userObject as? ApiNode ?: return
-
         if (apiNode.code_type != CodeType.METHOD.code) return
-
         // 使用你提供的后台执行工具，避免阻塞 UI
         project.context().runBackgroundReadUI(
             lockKey = CommonConstant.AST_CALLER_GLOBAL_ACTION,
@@ -113,7 +102,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                 if (resultElementType is PsiMethod) {
                     module = ModuleUtilCore.findModuleForPsiElement(resultElementType)?.name
                 }
-
                 return@runBackgroundReadUI Pair(getMockInfo(apiNode), module)
             },
             uiUpdate = { mockRequest, _ ->
@@ -122,7 +110,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
             }
         )
     }
-
     private fun getMockInfo(apiNode: ApiNode): ApiMockRequest? {
         if (apiNode.code_type == 3) {
             val resultElementType = PsiPathResolver.resolve(project, apiNode.tree_path)
@@ -135,7 +122,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         }
         return null
     }
-
     private fun handleDoubleClick(e: MouseEvent) {
         val path = tree.getPathForLocation(e.x, e.y) ?: return
         val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
@@ -147,7 +133,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                 },
                 uiUpdate = { psiElement, p ->
                     if (psiElement == null || !((psiElement as? PsiElement)?.isValid)!!) return@runBackgroundReadUI
-
                     ApplicationManager.getApplication().invokeLater({
                         if (psiElement is Navigatable && psiElement.canNavigate()) {
                             psiElement.navigate(true) // true 表示请求焦点
@@ -156,7 +141,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                 }
             )
     }
-
     /**
      * 处理右键菜单的核心逻辑
      */
@@ -167,7 +151,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         val targetNode = selPath.lastPathComponent as? DefaultMutableTreeNode ?: return
         createAndShowPopupMenu(e, targetNode)
     }
-
     /**
      * 使用 ActionManager 创建原生风格的右键菜单
      */
@@ -204,7 +187,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     node = newNode
                                 }
                             }
-
                             is PsiDirectory -> {
                                 val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                 if (module != null) {
@@ -230,7 +212,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     }
                                 }
                             }
-
                             is PsiClass -> {
                                 val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                 if (module != null) {
@@ -251,7 +232,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     }
                                 }
                             }
-
                             is PsiMethod -> {
                                 val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                 if (module != null) {
@@ -503,7 +483,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     node = newNode
                                 }
                             }
-
                             is PsiDirectory -> {
                                 val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                 if (module != null) {
@@ -529,7 +508,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     }
                                 }
                             }
-
                             is PsiClass -> {
                                 val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                 if (module != null) {
@@ -550,7 +528,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                     }
                                 }
                             }
-
                             is PsiMethod -> {
                                 val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                 if (module != null) {
@@ -624,7 +601,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                             }
                                     }
                                 }
-
                                 is PsiDirectory -> {
                                     val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                     if (module != null) {
@@ -649,7 +625,6 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                                         }
                                     }
                                 }
-
                                 is PsiClass -> {
                                     val module = ModuleUtilCore.findModuleForPsiElement(resultElementType)
                                     if (module != null) {
@@ -691,17 +666,13 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
                             }
                             tree.isEnabled = true
                         })
-
-
                 }
             })
         }
-
         val popupMenu = actionManager.createActionPopupMenu("ApiTreePopup", actionGroup)
         val component = popupMenu.component
         component.show(e.component, e.x, e.y)
     }
-
     fun getCacheDataAndClean(
         cacheService: ProjectCacheService,
         module: Module,
@@ -720,11 +691,9 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         }
         return Triple(moduleTree, oldNode, oldParentNode)
     }
-
     fun reloadTreeData(rootNode: ApiNode) {
         renderApiTree(rootNode)
     }
-
     /**
      * 提供给 Controller 调用的刷新方法
      * 当你在后台解析完 ApiNode 后，调用这个方法
@@ -733,13 +702,11 @@ class ApiTreePanel(private val project: Project) : SimpleToolWindowPanel(true, t
         val rootTreeNode = rootApiNode.toTreeNode()
         treeModel.setRoot(rootTreeNode)
     }
-
     fun getSelectedNode(): ApiNode? {
         val path = tree.selectionPath ?: return null
         val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return null
         return node.userObject as? ApiNode
     }
-
     /**
      * 局部刷新：只更新指定节点及其子节点，不影响其他节点的展开状态
      * @param targetTreeNode 当前 UI 上选中的那个 DefaultMutableTreeNode

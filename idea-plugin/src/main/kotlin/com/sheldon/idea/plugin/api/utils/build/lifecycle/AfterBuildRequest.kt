@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.lifecycle
-
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.module.Module
@@ -7,7 +6,6 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.utils.GlobalObjectStorageService
 import com.sheldon.idea.plugin.api.utils.MockGenerator
 import com.sheldon.idea.plugin.api.utils.ProjectCacheService
-
 class AfterBuildRequest(val request: ApiRequest) {
     fun execute(
         project: Project,

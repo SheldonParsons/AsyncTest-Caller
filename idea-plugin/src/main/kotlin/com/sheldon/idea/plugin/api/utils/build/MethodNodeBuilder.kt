@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -19,7 +18,6 @@ import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.lifecycle.AfterBuildRequest
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
-
 class MethodNodeBuilder(private val project: Project, val session: ScanSession) : TreeBuilder() {
     fun scan(): RouteRegistry {
         return runReadAction {
@@ -36,7 +34,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             routerRegistry
         }
     }
-
     fun scanModule(module: Module, hasDocs: Boolean = false): RouteRegistry {
         return runReadAction {
             val routerRegistry = RouteRegistry()
@@ -53,7 +50,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             return@runReadAction routerRegistry
         }
     }
-
     fun scanDir(module: Module, dir: PsiDirectory, hasDocs: Boolean = false): RouteRegistry {
         return runReadAction {
             val routerRegistry = RouteRegistry()
@@ -67,7 +63,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             return@runReadAction routerRegistry
         }
     }
-
     fun scanClass(module: Module, psiClass: PsiClass, hasDocs: Boolean = false): RouteRegistry {
         return runReadAction {
             val routerRegistry = RouteRegistry()
@@ -81,7 +76,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             return@runReadAction routerRegistry
         }
     }
-
     fun scanMethod(module: Module, psiMethod: PsiMethod, psiClass: PsiClass, classNode: ApiNode): RouteRegistry {
         return runReadAction {
             val routerRegistry = RouteRegistry()
@@ -96,7 +90,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             return@runReadAction routerRegistry
         }
     }
-
     private fun collectRecursively(
         currentDir: PsiDirectory,
         module: Module,
@@ -117,7 +110,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             collectRecursively(subDir, module, routerRegistry, prefix, hasDocs = hasDocs)
         }
     }
-
     private fun collectClass(
         module: Module,
         psiClass: PsiClass,
@@ -141,7 +133,6 @@ class MethodNodeBuilder(private val project: Project, val session: ScanSession) 
             ) continue
         }
     }
-
     private fun collectMethod(
         module: Module,
         psiClass: PsiClass,

@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.codeInsight.AnnotationUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiClass
@@ -29,9 +28,7 @@ import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.SpringClassResolver
 import com.sheldon.idea.plugin.api.utils.calculateSafeHash
-
 abstract class TreeBuilder {
-
     fun findBasePackageDirectory(dir: PsiDirectory): PsiDirectory? {
         if (dir.files.any { it ->
                 if (it is PsiJavaFile) {
@@ -53,7 +50,6 @@ abstract class TreeBuilder {
         }
         return null
     }
-
     fun isSpringBootApplicationClass(psiClass: PsiClass): Boolean {
         // 1️⃣ 直接注解
         if (AnnotationUtil.isAnnotated(
@@ -64,7 +60,6 @@ abstract class TreeBuilder {
         ) {
             return true
         }
-
         // 2️⃣ 元注解（组合注解）
         for (annotation in psiClass.modifierList?.annotations ?: emptyArray()) {
             val resolved = annotation.nameReferenceElement?.resolve()
@@ -79,10 +74,8 @@ abstract class TreeBuilder {
                 }
             }
         }
-
         return false
     }
-
     fun isController(psiClass: PsiClass): Boolean {
         if (psiClass.isAnnotationType) return false
         if (psiClass.isInterface || psiClass.hasModifierProperty(PsiModifier.ABSTRACT)) {
@@ -93,7 +86,6 @@ abstract class TreeBuilder {
             psiClass, SpringClassName.SPRING_CONTROLLER_ANNOTATION, findAll = false
         )
     }
-
     fun makeRootNode(module: Module): ApiNode {
         return ApiNode(
             type = NodeType.INTERFACE.code,
@@ -105,7 +97,6 @@ abstract class TreeBuilder {
             desc = "",
         )
     }
-
     fun makeDirNode(
         subDir: PsiDirectory, parentPath: String
     ): ApiNode {
@@ -119,7 +110,6 @@ abstract class TreeBuilder {
             desc = "",
         )
     }
-
     fun makeClassNode(
         classHelper: ClassHelper,
         psiClass: PsiClass,
@@ -146,7 +136,6 @@ abstract class TreeBuilder {
         }
         return result
     }
-
     fun makeMethodNode(
         methodHelper: MethodHelper,
         psiMethod: PsiMethod,
@@ -189,7 +178,6 @@ abstract class TreeBuilder {
         }
         return result
     }
-
     fun makeMethodExcludeParam(
         methodHelper: MethodHelper,
         psiMethod: PsiMethod,
@@ -200,7 +188,6 @@ abstract class TreeBuilder {
             if (request.method == null) return null
             return "${request.method!!.lowercase()}:${request.path}"
         }
-
         val request: ApiRequest = methodHelper.getMethodNodeCoreInfo(classNode, true) ?: return null
         request.path = PathUtils.normalizeToAsyncTestPath(request.path)
         val requestKey = getRequestKey(request) ?: return null
@@ -216,7 +203,6 @@ abstract class TreeBuilder {
         )
     }
 }
-
 abstract class BaseHelper {
     object DocHelper {
         fun parseDoc(element: PsiElement): Pair<String?, String?> {
@@ -233,7 +219,6 @@ abstract class BaseHelper {
             }
             return alias to desc
         }
-
         /**
          * 强力清洗函数
          */
@@ -253,13 +238,10 @@ abstract class BaseHelper {
             return result
         }
     }
-
     fun parseDoc(element: PsiElement): Pair<String?, String?> {
         return DocHelper.parseDoc(element)
     }
 }
-
-
 data class ParamAnalysisResult(
     val location: ParamLocation,
     val name: String,

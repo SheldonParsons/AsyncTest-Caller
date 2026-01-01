@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method
-
 import com.intellij.openapi.module.Module
 import com.sheldon.idea.plugin.api.method.ParamLocation
 import com.sheldon.idea.plugin.api.model.ApiRequest
@@ -10,7 +9,6 @@ import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.Spri
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.SpringFormDataResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.SpringHeadersResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part.SpringQueryResolver
-
 class DispatcherParameterResolver {
     /**
      * @param apiRequest @RequestMapping 上解析出来的静态信息 (headers, params)
@@ -30,7 +28,6 @@ class DispatcherParameterResolver {
                 ParamLocation.QUERY -> {
                     SpringQueryResolver().push(result, apiRequest, implicitParams = implicitParams, hasDocs = hasDocs)
                 }
-
                 ParamLocation.BODY -> {
                     SpringBodyResolver(module).push(
                         result,
@@ -41,7 +38,6 @@ class DispatcherParameterResolver {
                     apiRequest.formData = AsyncTestFormData()
                     hasJsonBody = true
                 }
-
                 ParamLocation.FORM_DATA -> {
                     if (hasJsonBody) {
                         continue
@@ -53,7 +49,6 @@ class DispatcherParameterResolver {
                         hasDocs = hasDocs
                     )
                 }
-
                 ParamLocation.HEADER -> {
                     SpringHeadersResolver().push(result, apiRequest, implicitParams = implicitParams, hasDocs = hasDocs)
                 }

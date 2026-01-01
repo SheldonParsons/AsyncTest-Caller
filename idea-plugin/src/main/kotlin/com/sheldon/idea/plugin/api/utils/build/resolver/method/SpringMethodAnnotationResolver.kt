@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method
-
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiMethod
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
@@ -7,7 +6,6 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.service.SpringClassName
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
-
 class SpringMethodAnnotationResolver {
     /**
      * 解析方法注解上的静态配置
@@ -15,9 +13,7 @@ class SpringMethodAnnotationResolver {
     fun resolve(method: PsiMethod): ApiRequest? {
         var genericAnnotation: PsiAnnotation? = null
         var specificAnnotation: PsiAnnotation? = null
-
         val annotationMethod = AnnotationResolver.findMethodWithMapping(method) ?: return null
-
         for (annotation in annotationMethod.annotations) {
             val qName = annotation.qualifiedName ?: continue
             if (qName == SpringClassName.REQUEST_MAPPING_ANNOTATION) {
@@ -31,7 +27,6 @@ class SpringMethodAnnotationResolver {
         val specificInfo = if (specificAnnotation != null) parseSingleAnnotation(specificAnnotation) else ApiRequest()
         return mergeInfo(genericInfo, specificInfo)
     }
-
     fun mergeInfo(genericInfo: ApiRequest, specificInfo: ApiRequest): ApiRequest {
         val method = specificInfo.method ?: genericInfo.method
         val path: String = ResolverHelper.combinePath(genericInfo.path, specificInfo.path)
@@ -45,7 +40,6 @@ class SpringMethodAnnotationResolver {
         specificInfo.headers = headers
         return specificInfo
     }
-
     companion object {
         fun parseSingleAnnotation(annotation: PsiAnnotation, ignoreMethod: Boolean = false): ApiRequest {
             var method: String? = null

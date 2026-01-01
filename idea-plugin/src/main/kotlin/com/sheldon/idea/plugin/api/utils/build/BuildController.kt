@@ -1,12 +1,10 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.project.Project
 import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.service.SpringWebScanner
 import com.sheldon.idea.plugin.api.utils.ProjectCacheService
 import com.sheldon.idea.plugin.api.utils.ScanSession
 import com.sheldon.idea.plugin.api.utils.scanContext
-
 class BuildController {
     fun reloadProjectForce(project: Project, saveMock: Boolean = true): MutableMap<String, ApiNode> {
         val cacheService = ProjectCacheService.getInstance(project = project)
@@ -24,7 +22,6 @@ class BuildController {
             return projectTreeMap
         }
     }
-
     fun reloadProjectCheck(project: Project, saveMock: Boolean = true): MutableMap<String, ApiNode> {
         val cacheService = ProjectCacheService.getInstance(project = project)
         val projectTreeMap = cacheService.getTreeMap()

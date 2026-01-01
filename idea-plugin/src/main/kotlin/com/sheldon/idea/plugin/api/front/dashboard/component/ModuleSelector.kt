@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.dashboard.component
-
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -12,12 +11,9 @@ import java.awt.event.ItemEvent
 import java.util.Vector
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JList
-
 class ModuleSelector(val project: Project, val treePanel: ApiTreePanel) : ComboBox<String>() {
-
     init {
         isSwingPopup = false
-
         setRenderer(object : SimpleListCellRenderer<String>() {
             override fun customize(
                 list: JList<out String?>,
@@ -34,11 +30,8 @@ class ModuleSelector(val project: Project, val treePanel: ApiTreePanel) : ComboB
                 icon = AllIcons.Nodes.Module
                 iconTextGap = 6
             }
-
         })
-
         isEditable = false
-
         this.addItemListener { e ->
             if (e.stateChange == ItemEvent.SELECTED) {
                 val newValue = e.item as? String ?: return@addItemListener
@@ -57,11 +50,8 @@ class ModuleSelector(val project: Project, val treePanel: ApiTreePanel) : ComboB
             }
         }
     }
-
-
     val currentSelect: String?
         get() = this.item
-
     fun updateDropdown(items: MutableSet<String>) {
         val newModel = DefaultComboBoxModel(Vector(items))
         this.model = newModel

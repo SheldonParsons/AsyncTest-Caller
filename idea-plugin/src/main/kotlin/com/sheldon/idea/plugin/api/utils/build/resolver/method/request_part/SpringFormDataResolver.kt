@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver.method.request_part
-
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiUtil
@@ -16,7 +15,6 @@ import com.sheldon.idea.plugin.api.utils.build.ParamAnalysisResult
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.method.parameter.SimpleTypeResolver
-
 class SpringFormDataResolver : RequestPartResolver {
     private var paramDocStatement: String? = null
     override fun push(
@@ -50,7 +48,6 @@ class SpringFormDataResolver : RequestPartResolver {
         }
         return apiRequest
     }
-
     fun buildTree(
         psiType: PsiType, variable: ParamAnalysisResult, implicitParams: MutableMap<String, DocInfo>
     ): MutableList<AsyncTestVariableNode>? {

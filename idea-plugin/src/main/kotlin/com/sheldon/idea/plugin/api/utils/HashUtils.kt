@@ -4,7 +4,6 @@ import com.sheldon.idea.plugin.api.model.ApiRequest
 import com.sheldon.idea.plugin.api.model.DataStructure
 import java.math.BigInteger
 import java.security.MessageDigest
-
 fun ApiRequest.calculateSafeHash(): String {
     val md = MessageDigest.getInstance("MD5")
     fun update(str: String?) {

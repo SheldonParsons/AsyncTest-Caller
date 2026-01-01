@@ -1,7 +1,5 @@
 package com.sheldon.idea.plugin.api.utils
-
 object PathUtils {
-
     fun normalizeToAsyncTestPath(springPath: String?): String {
         if (springPath == null) return ""
         val result = StringBuilder()
@@ -23,7 +21,6 @@ object PathUtils {
         }
         return result.toString()
     }
-
     private fun extractBalancedBraceContent(text: String, startIndex: Int): String? {
         var balance = 0
         for (j in startIndex until text.length) {
@@ -39,7 +36,6 @@ object PathUtils {
         }
         return null
     }
-
     private fun getVariableName(content: String): String {
         val colonIndex = content.indexOf(':')
         return if (colonIndex != -1) {

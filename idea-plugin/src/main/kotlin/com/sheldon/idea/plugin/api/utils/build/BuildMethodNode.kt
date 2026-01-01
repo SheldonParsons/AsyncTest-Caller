@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
@@ -7,7 +6,6 @@ import com.sheldon.idea.plugin.api.model.ApiNode
 import com.sheldon.idea.plugin.api.utils.build.helper.ClassHelper
 import com.sheldon.idea.plugin.api.utils.build.helper.MethodHelper
 import com.sheldon.idea.plugin.api.utils.build.resolver.AnnotationResolver
-
 class BuildMethodNode(
     val module: Module,
     val project: Project,

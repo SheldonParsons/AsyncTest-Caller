@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.docs.extractor
-
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiComment
@@ -11,10 +10,8 @@ import com.sheldon.idea.plugin.api.utils.build.docs.DocExtractor
 import com.sheldon.idea.plugin.api.utils.build.docs.DocInfo
 import com.sheldon.idea.plugin.api.utils.build.docs.ExtractionContext
 import com.sheldon.idea.plugin.api.utils.build.resolver.ResolverHelper.Companion.cleanComment
-
 class JavadocExtractor : DocExtractor {
     override fun getOrder() = 10
-
     override fun extract(
         context: ExtractionContext,
         currentDoc: DocInfo,
@@ -27,7 +24,6 @@ class JavadocExtractor : DocExtractor {
             currentDoc.merge(javaDocTitle, javaDocDesc)
         }
     }
-
     private fun parseJavadoc(element: PsiElement, codeType: CodeType): Pair<String, String> {
         if (codeType == CodeType.PARAM) {
             return Pair(getFieldComment(element), "")
@@ -35,7 +31,6 @@ class JavadocExtractor : DocExtractor {
             return getElementComment(element)
         }
     }
-
     fun getFieldComment(element: PsiElement?): String {
         if (element == null) return ""
         val comments = mutableListOf<String>()
@@ -43,7 +38,6 @@ class JavadocExtractor : DocExtractor {
             val rawText = element.docComment!!
                 .descriptionElements
                 .joinToString("") { it.text }
-
             return normalizeJavadoc(rawText)
                 .lines()
                 .map { it.trim() }
@@ -57,7 +51,6 @@ class JavadocExtractor : DocExtractor {
                 is PsiWhiteSpace -> {
                     // ignore
                 }
-
                 else -> break
             }
             child = child.nextSibling
@@ -84,8 +77,6 @@ class JavadocExtractor : DocExtractor {
         }
         return comments.joinToString("\n")
     }
-
-
     fun getElementComment(element: PsiElement): Pair<String, String> {
         if (element !is PsiDocCommentOwner) return "" to ""
         val docComment = element.docComment ?: return "" to ""
@@ -100,7 +91,6 @@ class JavadocExtractor : DocExtractor {
         }
         return alias to desc
     }
-
     /**
      * 强力清洗函数
      */

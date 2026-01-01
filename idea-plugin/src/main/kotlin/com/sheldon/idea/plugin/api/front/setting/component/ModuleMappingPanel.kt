@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.front.setting.component
-
 import com.google.gson.JsonParser
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.module.ModuleManager
@@ -27,7 +26,6 @@ import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
-
 /**
  * 模块映射配置面板
  * @param project 当前 IDEA Project 对象
@@ -47,7 +45,6 @@ class ModuleMappingPanel(
     var onDataChanged: (() -> Unit)? = null
     var tokenProvider: (() -> String)? = null
     var urlProvider: (() -> String)? = null
-
     init {
         initTableColumns()
         tableModel.addTableModelListener { e ->
@@ -74,7 +71,6 @@ class ModuleMappingPanel(
             )
         }
     }
-
     /**
      * 【核心方法】创建并返回在这个 Group 的完整 UI 面板
      * 包含了：标题边框、表格、加减号工具栏
@@ -97,7 +93,6 @@ class ModuleMappingPanel(
         groupPanel.add(decorator.createPanel(), BorderLayout.CENTER)
         return groupPanel
     }
-
     private fun initTableColumns() {
         tableModel.addColumn("代码模块")
         tableModel.addColumn("绑定项目")
@@ -116,7 +111,6 @@ class ModuleMappingPanel(
         table.rowHeight = 25
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
     }
-
     /**
      * 需求1：在点下拉之前，判断有没有数据，没有则请求
      */
@@ -132,13 +126,11 @@ class ModuleMappingPanel(
                 }
                 fetchProjects(comboBox)
             }
-
             override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {}
             override fun popupMenuCanceled(e: PopupMenuEvent?) {}
         })
         table.columnModel.getColumn(1).cellEditor = DefaultCellEditor(comboBox)
     }
-
     /**
      * 需求2：在展开下拉之前，拿到第二列的值，通过它再去发送请求
      */
@@ -156,13 +148,11 @@ class ModuleMappingPanel(
                     comboBox.showPopup()
                 }
             }
-
             override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {}
             override fun popupMenuCanceled(e: PopupMenuEvent?) {}
         })
         table.columnModel.getColumn(2).cellEditor = DefaultCellEditor(comboBox)
     }
-
     private fun fetchProjects(comboBox: ComboBox<RemoteProject>) {
         val token = tokenProvider?.invoke()
         val url = urlProvider?.invoke()
@@ -204,7 +194,6 @@ class ModuleMappingPanel(
             }
         )
     }
-
     private fun fetchVersions(projectId: String, comboBox: ComboBox<String>) {
         val token = tokenProvider?.invoke()
         val url = urlProvider?.invoke() ?: return
@@ -235,7 +224,6 @@ class ModuleMappingPanel(
             }
         )
     }
-
     /**
      * 【新】设置删除列的样式和行为
      */
@@ -270,12 +258,10 @@ class ModuleMappingPanel(
             }
         })
     }
-
     private fun updateColumnEditor(colIndex: Int, items: List<String>) {
         val comboBox = ComboBox(items.toTypedArray())
         table.columnModel.getColumn(colIndex).cellEditor = DefaultCellEditor(comboBox)
     }
-
     /**
      * 更新绑定项目列表 (当网络请求回来后调用)
      */
@@ -283,7 +269,6 @@ class ModuleMappingPanel(
         val comboBox = ComboBox(projects.toTypedArray())
         table.columnModel.getColumn(1).cellEditor = DefaultCellEditor(comboBox)
     }
-
     /**
      * 更新绑定版本列表 (当网络请求回来后调用)
      */
@@ -293,7 +278,6 @@ class ModuleMappingPanel(
         val comboBox = ComboBox(versions.toTypedArray())
         table.columnModel.getColumn(2).cellEditor = DefaultCellEditor(comboBox)
     }
-
     /**
      * 获取当前表格中的数据 (用于保存到 Service)
      * 这里包含了去重逻辑校验
@@ -310,7 +294,6 @@ class ModuleMappingPanel(
         }
         return list
     }
-
     /**
      * 将数据回填到表格 (用于初始化显示)
      */
@@ -321,7 +304,6 @@ class ModuleMappingPanel(
         }
     }
 }
-
 /**
  * 自定义 TableModel，用于支持 removeRow 等操作
  */

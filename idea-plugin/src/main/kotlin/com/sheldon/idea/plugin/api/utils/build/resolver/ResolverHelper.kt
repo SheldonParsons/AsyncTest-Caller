@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build.resolver
-
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiBinaryExpression
@@ -16,10 +15,8 @@ import com.intellij.psi.impl.JavaConstantExpressionEvaluator
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiUtil
 import com.sheldon.idea.plugin.api.service.SpringClassName
-
 class ResolverHelper {
     companion object {
-
         fun parseRequestMethod(annotation: PsiAnnotation): SpringClassName.RequestMethod? {
             val qName = annotation.qualifiedName ?: return null
             if (SpringClassName.METHOD_ANNOTATION_MAP.containsKey(qName)) {
@@ -33,7 +30,6 @@ class ResolverHelper {
             }
             return null
         }
-
         fun isMultipartFile(type: PsiType): Boolean {
             if (isSingleFile(type)) return true
             if (type is com.intellij.psi.PsiArrayType) {
@@ -46,14 +42,12 @@ class ResolverHelper {
             }
             return false
         }
-
         private fun isSingleFile(type: PsiType): Boolean {
             return ResolverHelper.isInheritor(type, SpringClassName.MULTI_PART_FILE) || ResolverHelper.isInheritor(
                 type,
                 SpringClassName.JAVAX_PART
             ) || ResolverHelper.isInheritor(type, SpringClassName.JAKARTA_PART)
         }
-
         fun isInheritor(type: PsiType, targetFqn: String): Boolean {
             val psiClass = PsiUtil.resolveClassInType(type) ?: return false
             if (psiClass.qualifiedName == targetFqn) {
@@ -61,7 +55,6 @@ class ResolverHelper {
             }
             return InheritanceUtil.isInheritor(psiClass, targetFqn)
         }
-
         private fun resolveMethodEnumValues(element: PsiElement): SpringClassName.RequestMethod? {
             val methods = mutableListOf<SpringClassName.RequestMethod>()
             fun extract(item: PsiElement) {
@@ -80,7 +73,6 @@ class ResolverHelper {
             }
             return methods.firstOrNull()
         }
-
         private fun generateNotEqualValue(original: String): String {
             if (original.isEmpty()) return "not_empty"
             val chars = original.toCharArray()
@@ -93,7 +85,6 @@ class ResolverHelper {
             }
             return String(chars)
         }
-
         fun <T> mergeHeadersOrParams(
             baseList: MutableList<T>?,
             overlayList: MutableList<T>?,
@@ -125,7 +116,6 @@ class ResolverHelper {
             result.addAll(map.values)
             return result
         }
-
         fun <T> addOrUpdateElement(
             list: MutableList<T>,
             element: T,
@@ -151,7 +141,6 @@ class ResolverHelper {
                 list.add(element)
             }
         }
-
         fun combinePath(base: String?, sub: String?): String {
             val safeBase = base?.trim() ?: ""
             val safeSub = sub?.trim() ?: ""
@@ -173,7 +162,6 @@ class ResolverHelper {
                 combined
             }
         }
-
         fun getElementComment(element: PsiElement?): String {
             if (element == null) return ""
             val comments = mutableListOf<String>()
@@ -212,7 +200,6 @@ class ResolverHelper {
             }
             return comments.joinToString("\n")
         }
-
         fun cleanComment(text: String): String {
             return text.trim()
                 .replace(Regex("^//\\s*"), "")
@@ -220,7 +207,6 @@ class ResolverHelper {
                 .replace(Regex("\\s*\\*+/$"), "")
                 .trim()
         }
-
         fun debugPsiStructure(element: PsiElement) {
             println("DEBUG START: 正在检查字段 [${element.text.substringBefore("\n").take(20)}...]")
             var prev = element.prevSibling

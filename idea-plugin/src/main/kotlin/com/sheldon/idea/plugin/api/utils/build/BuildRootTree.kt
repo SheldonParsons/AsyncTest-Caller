@@ -1,5 +1,4 @@
 package com.sheldon.idea.plugin.api.utils.build
-
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -9,7 +8,6 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
 import com.sheldon.idea.plugin.api.model.ApiNode
 import kotlin.collections.set
-
 class BuildRootTree(private val project: Project) : TreeBuilder() {
     fun build(nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): MutableMap<String, ApiNode> {
         return runReadAction {
@@ -25,7 +23,6 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
             return@runReadAction resultRoots
         }
     }
-
     fun buildModule(module: Module, nextBuild: (PsiDirectory, ApiNode, String, Module) -> Unit): ApiNode {
         val moduleNode = makeRootNode(module)
         val baseDir = getBaseDir(module)
@@ -34,15 +31,12 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
         }
         return moduleNode
     }
-
     fun getBaseDir(module: Module): PsiDirectory? {
         val psiManager = PsiManager.getInstance(project)
-
         val sourceFolders = ModuleRootManager
             .getInstance(module)
             .contentEntries
             .flatMap { it.sourceFolders.asList() }
-
         for (sourceFolder in sourceFolders) {
             val dir = sourceFolder.file?.let { psiManager.findDirectory(it) } ?: continue
             val found = findBasePackageDirectory(dir)
@@ -50,7 +44,6 @@ class BuildRootTree(private val project: Project) : TreeBuilder() {
                 return found
             }
         }
-
         return null
     }
 }

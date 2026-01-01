@@ -1,12 +1,10 @@
 package com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.resolver
-
 import com.sheldon.idea.plugin.api.method.AsyncTestType
 import com.sheldon.idea.plugin.api.method.AsyncTestVariableNode
 import com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.OpenApiBuildContext
 import com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.parser.SchemaParser
 import com.sheldon.idea.plugin.api.utils.build.docs.export.openapi3.utils.buildSchemaByAsyncType
 import io.swagger.v3.oas.models.media.*
-
 object TypeResolver {
     fun resolveSchema(node: AsyncTestVariableNode, context: OpenApiBuildContext): Schema<*> {
         val schemaType = buildSchemaByAsyncType(node.type)
@@ -23,13 +21,11 @@ object TypeResolver {
             return StringSchema()
         }
     }
-
     private fun resolveObjectSchema(node: AsyncTestVariableNode, context: OpenApiBuildContext): Schema<*> {
         if (!context.registeredSchemas.contains(node.dsTarget)) {
             val schema = SchemaParser(context).parse(node)
             context.registerSchema(node.dsTarget ?: "", schema)
         }
-
         return Schema<Any>().`$ref`("#/components/schemas/${node.dsTarget ?: ""}")
     }
 }
